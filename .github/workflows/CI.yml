@@ -52,9 +52,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
-      - run: |
-          julia --project=docs -e '
-            using Documenter: DocMeta, doctest
-            using Extents
-            DocMeta.setdocmeta!(Extents, :DocTestSetup, :(using Extents); recursive=true)
-            doctest(Extents)'
