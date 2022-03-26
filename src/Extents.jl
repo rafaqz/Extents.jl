@@ -6,10 +6,15 @@ export Extent, extent, bounds
     Extent
 
     Extent(; kw...)
-    Extent(values::NamedTuple)
+    Extent(values::Union{Tuple,NamedTuple})
 
-A wrapper for a `NamedTuple` of `Interval` that
-defines the extent of an object along its dimensions.
+A wrapper for a `NamedTuple` or `Tuple` or tuples holding
+the lower and upper bounds for each dimension of the object.
+
+`keys(extent)` will return the dimension name Symbols, if they exist,
+in the order the dimensions are used in the object. 
+
+`values` will return a tuple of tuples: `(lowerbound, upperbound)` for each dimension.
 """
 struct Extent{T<:Union{Tuple,NamedTuple}}
     bounds::T
@@ -53,11 +58,11 @@ end
 """
     extent(x)
 
-Returns an [`Extent`](@ref) object, holding an `Interval`
-for each named dimension of the object.
+Returns an [`Extent`](@ref), holding the bounds for each dimension of the object.
 """
 function extent end
 
+extent(extent) = nothing
 extent(extent::Extent) = extent
 
 end
