@@ -6,21 +6,20 @@ export Extent, extent, bounds
     Extent
 
     Extent(; kw...)
-    Extent(values::Union{Tuple,NamedTuple})
+    Extent(values::NamedTuple)
 
-A wrapper for a `NamedTuple` or `Tuple` or tuples holding
+A wrapper for a `NamedTuple` of tuples holding
 the lower and upper bounds for each dimension of the object.
 
-`keys(extent)` will return the dimension name Symbols, if they exist,
+`keys(extent)` will return the dimension name Symbols,
 in the order the dimensions are used in the object. 
 
 `values` will return a tuple of tuples: `(lowerbound, upperbound)` for each dimension.
 """
-struct Extent{T<:Union{Tuple,NamedTuple}}
+struct Extent{T<:NamedTuple}
     bounds::T
 end
 Extent(; kw...) = Extent(values(kw))
-Extent(args...) = Extent(args)
 
 bounds(ext::Extent) = getfield(ext, :bounds)
 
@@ -37,16 +36,12 @@ function Base.getindex(ext::Extent, i::Int)
     getindex(bounds(ext), i)
 end
 Base.keys(ext::Extent{<:NamedTuple}) = keys(bounds(ext))
-Base.keys(ext::Extent{<:Tuple}) = throw(ArgumentError("extent has no keys")) # What to do here?
 Base.values(ext::Extent) = values(bounds(ext))
 
 function Base.:(==)(a::Extent{<:NamedTuple{K1}}, b::Extent{<:NamedTuple{K2}}) where {K1, K2}
     length(K1) == length(K2) || return false
     all(map(k -> k in K1, K2)) || return false
     return all(map((k -> a[k] == b[k]), K1))
-end
-function Base.:(==)(a::Extent{<:Tuple}, b::Extent{<:Tuple})
-    values(a) == values(b)
 end
 Base.:(==)(a::Extent, b::Extent) = false
 

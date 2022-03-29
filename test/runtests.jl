@@ -2,31 +2,27 @@ using Extents
 using Test
 
 @testset "Extents.jl" begin
-    ex_nt1 = Extent(X=(1, 2), Y=(3, 4)) 
-    ex_nt2 = Extent(Y=(3, 4), X=(1, 2))
-    ex_nt3 = Extent(X=(1, 2), Y=(3, 4), Z=(5.0, 6.0)) 
-    ex_tuple1 = Extent((1, 2), (3, 4))
+    ex1 = Extent(X=(1, 2), Y=(3, 4)) 
+    ex2 = Extent(Y=(3, 4), X=(1, 2))
+    ex3 = Extent(X=(1, 2), Y=(3, 4), Z=(5.0, 6.0)) 
 
     @testset "bounds" begin
-        @test bounds(ex_tuple1) == ((1, 2), (3, 4)) 
-        @test bounds(ex_nt1) === (X=(1, 2), Y=(3, 4))
-        @test bounds(ex_nt2) === (Y=(3, 4), X=(1, 2))
-        @test bounds(ex_nt3) === (X=(1, 2), Y=(3, 4), Z=(5.0, 6.0)) 
+        @test bounds(ex1) === (X=(1, 2), Y=(3, 4))
+        @test bounds(ex2) === (Y=(3, 4), X=(1, 2))
+        @test bounds(ex3) === (X=(1, 2), Y=(3, 4), Z=(5.0, 6.0)) 
     end
 
     @testset "extent" begin
-        @test extent(ex_nt1) === ex_nt1
+        @test extent(ex1) === ex1
     end
 
     @testset "equality" begin
-        @test ex_nt1 == ex_nt2
-        @test ex_nt1 != ex_nt3
+        @test ex1 == ex2
+        @test ex1 != ex3
     end
 
     @testset "properties" begin
-        @test keys(ex_nt1) == (:X, :Y)
-        @test_throws ArgumentError keys(ex_tuple1)
-        @test values(ex_nt1) == ((1, 2), (3, 4))
-        @test values(ex_tuple1) == ((1, 2), (3, 4))
+        @test keys(ex1) == (:X, :Y)
+        @test values(ex1) == ((1, 2), (3, 4))
     end
 end
