@@ -12,7 +12,7 @@ A wrapper for a `NamedTuple` of tuples holding
 the lower and upper bounds for each dimension of the object.
 
 `keys(extent)` will return the dimension name Symbols,
-in the order the dimensions are used in the object. 
+in the order the dimensions are used in the object.
 
 `values` will return a tuple of tuples: `(lowerbound, upperbound)` for each dimension.
 """
@@ -30,7 +30,7 @@ Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
 
 bounds(ext::Extent) = getfield(ext, :bounds)
 
-function Base.getproperty(ext::Extent, key::Symbol) 
+function Base.getproperty(ext::Extent, key::Symbol)
     haskey(bounds(ext), key) || throw(ErrorException("Extent has no field $key"))
     getproperty(bounds(ext), key)
 end
@@ -58,7 +58,7 @@ function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1, K2}
     end
     all(keys_match) || return false
     values_match = map(K1) do k
-        va = a[k] 
+        va = a[k]
         vb = b[k]
         isnothing(va) && isnothing(vb) || va == vb
     end
@@ -83,21 +83,23 @@ extent(extent::Extent) = extent
 """
     intersects(ext1::Extent, ext2::Extent)
 
-Check if two `Extent` objects intersect. 
+Check if two `Extent` objects intersect.
 
 Returns `true` if the extents of all common dimensions share some values
-including just the edge values of thier range. 
+including just the edge values of thier range.
 
 Dimensions that are not shared are ignored. The order of dimensions is also ignored.
 
 If there are no common dimensions, `false` is returned.
 """
-function intersects(ext1::Extent{K1}, ext2::Extent{K2}) where {K1, K2}
+function intersects(ext1::Extent, ext2::Extent)
     keys = _shared_keys(ext1, ext2)
-    if length(keys) == 0 
+    if length(keys) == 0
         return false # Otherwise `all` returns `true` for empty tuples
     else
-        dimintersections = map(k -> _bounds_intersect(ext1[unwrap(k)], ext2[unwrap(k)]), keys)
+        dimintersections = map(keys) do k
+            _bounds_intersect(ext1[unwrap(k)], ext2[unwrap(k)])
+        end
         return all(dimintersections)
     end
 end
@@ -112,7 +114,7 @@ intersects(obj1::Nothing, obj2::Nothing) = false
 Get the union of two extents, e.g. the combined extent of both objects
 for all dimensions.
 """
-function union(ext1::Extent{K1}, ext2::Extent{K2}) where {K1, K2}
+function union(ext1::Extent, ext2::Extent)
     keys = _shared_keys(ext1, ext2)
     values = map(keys) do k
         k = unwrap(k)
@@ -120,7 +122,7 @@ function union(ext1::Extent{K1}, ext2::Extent{K2}) where {K1, K2}
         a = min(map(first, k_exts)...)
         b = max(map(last, k_exts)...)
         (a, b)
-    end 
+    end
     return Extent{map(unwrap, keys)}(values)
 end
 union(obj1, obj2) = union(extent(obj1), extent(obj2))
@@ -129,7 +131,7 @@ union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
 """
     intersect(ext1::Extent, ext2::Extent)
 
-Get the intersect of two extents as another `Extent`, e.g. 
+Get the intersect of two extents as another `Extent`, e.g.
 the area covered by the shared dimensions for both extents.
 
 If there is no intersection for any shared dimension, `nothing` will be returned.
