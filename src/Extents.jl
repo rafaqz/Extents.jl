@@ -117,7 +117,9 @@ function union(ext1::Extent{K1}, ext2::Extent{K2}) where {K1, K2}
     values = map(keys) do k
         k = unwrap(k)
         k_exts = (ext1[k], ext2[k])
-        min(map(first, k_exts)...), max(map(last, k_exts)...)
+        a = min(map(first, k_exts)...)
+        b = max(map(last, k_exts)...)
+        (a, b)
     end 
     return Extent{map(unwrap, keys)}(values)
 end
