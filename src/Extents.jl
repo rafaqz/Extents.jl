@@ -114,11 +114,12 @@ for all dimensions.
 """
 function union(ext1::Extent{K1}, ext2::Extent{K2}) where {K1, K2}
     keys = _shared_keys(ext1, ext2)
-    map(keys) do k
+    values = map(keys) do k
         k = unwrap(k)
         k_exts = (ext1[k], ext2[k])
         min(map(first, k_exts)...), max(map(last, k_exts)...)
-    end |> Extent{map(unwrap, keys)}
+    end 
+    return Extent{map(unwrap, keys)}(values)
 end
 union(obj1, obj2) = union(extent(obj1), extent(obj2))
 union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
@@ -139,7 +140,7 @@ function intersect(ext1::Extent, ext2::Extent)
         b = min(map(last, k_exts)...)
         (a, b)
     end
-    return Extent{keys}(values)
+    return Extent{map(unwrap, keys)}(values)
 end
 intersect(obj1, obj2) = intersect(extent(obj1), extent(obj2))
 intersect(obj1, obj2, obj3, objs...) = intersect(intersect(obj1, obj2), obj3, objs...)
