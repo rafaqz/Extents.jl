@@ -129,8 +129,10 @@ union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
 """
     intersect(ext1::Extent, ext2::Extent)
 
-Get the intersect of two extents as another `Extent`, e.g. the area covered by both dimensions.
-If this is empty for any dimension, `nothing` will be returned.
+Get the intersect of two extents as another `Extent`, e.g. 
+the area covered by the shared dimensions for both extents.
+
+If there is no intersection for any shared dimension, `nothing` will be returned.
 """
 function intersect(ext1::Extent, ext2::Extent)
     intersects(ext1, ext2) || return nothing
