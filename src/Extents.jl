@@ -52,11 +52,7 @@ Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
 
 function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1, K2}
-    length(K1) == length(K2) || return false
-    keys_match = map(K2) do k
-        k in K1
-    end
-    all(keys_match) || return false
+    _keys_match(a, b) || return false
     values_match = map(K1) do k
         va = a[k]
         vb = b[k]
@@ -93,12 +89,13 @@ Dimensions that are not shared are ignored. The order of dimensions is also igno
 If there are no common dimensions, `false` is returned.
 """
 function intersects(ext1::Extent, ext2::Extent; strict=false)
+    _maybe_keys_match(ext1, ext2, strict) || return false
     keys = _shared_keys(ext1, ext2)
     if length(keys) == 0
         return false # Otherwise `all` returns `true` for empty tuples
     else
         dimintersections = map(keys) do k
-            _bounds_intersect(ext1[unwrap(k)], ext2[unwrap(k)])
+            _bounds_intersect(ext1[_unwrap(k)], ext2[_unwrap(k)])
         end
         return all(dimintersections)
     end
@@ -114,18 +111,19 @@ intersects(obj1::Nothing, obj2::Nothing) = false
 Get the union of two extents, e.g. the combined extent of both objects
 for all dimensions.
 """
-function union(ext1::Extent{K1}, ext2::Extent{K2}; strict=false) where {K1,K2}
+function union(ext1::Extent, ext2::Extent; strict=false)
+    _maybe_keys_match(ext1, ext2, strict) || return nothing
     keys = _shared_keys(ext1, ext2)
     values = map(keys) do k
-        k = unwrap(k)
+        k = _unwrap(k)
         k_exts = (ext1[k], ext2[k])
         a = min(map(first, k_exts)...)
         b = max(map(last, k_exts)...)
         (a, b)
     end
-    return Extent{map(unwrap, keys)}(values)
+    return Extent{map(_unwrap, keys)}(values)
 end
-union(obj1, obj2) = union(extent(obj1), extent(obj2))
+union(obj1, obj2) = union(extent(obj1), extent(obj2)) 
 union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
 
 """
@@ -136,20 +134,32 @@ the area covered by the shared dimensions for both extents.
 
 If there is no intersection for any shared dimension, `nothing` will be returned.
 """
-function intersect(ext1::Extent, ext2::Extent)
+function intersect(ext1::Extent, ext2::Extent; strict=false)
+    _maybe_keys_match(ext1, ext2, strict) || return nothing
     intersects(ext1, ext2) || return nothing
     keys = _shared_keys(ext1, ext2)
     values = map(keys) do k
-        k = unwrap(k)
+        k = _unwrap(k)
         k_exts = (ext1[k], ext2[k])
         a = max(map(first, k_exts)...)
         b = min(map(last, k_exts)...)
         (a, b)
     end
-    return Extent{map(unwrap, keys)}(values)
+    return Extent{map(_unwrap, keys)}(values)
 end
 intersect(obj1, obj2) = intersect(extent(obj1), extent(obj2))
 intersect(obj1, obj2, obj3, objs...) = intersect(intersect(obj1, obj2), obj3, objs...)
+
+# Internal utils
+
+_maybe_keys_match(ext1, ext2, strict) = !strict || _keys_match(ext1, ext2)
+
+function _keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
+    length(K1) == length(K2) || return false
+    keys_match = map(K2) do k
+        k in K1
+    end |> all
+end
 
 function _bounds_intersect(b1::Tuple, b2::Tuple)
     (b1[1] <= b2[2] && b1[2] >= b2[1])
@@ -167,6 +177,6 @@ function _shared_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
     end
 end
 
-unwrap(::Val{X}) where X = X
+_unwrap(::Val{X}) where X = X
 
 end
