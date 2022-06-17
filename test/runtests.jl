@@ -37,7 +37,10 @@ end
 @testset "union" begin
     a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
     b = Extent(X=(2.1, 2.5), Y=(3.0, 4.0), Z=(0.0, 1.0))
+    c = Extent(Z=(0.2, 2.0))
     @test Extents.union(a, b) == Extent(X=(0.1, 2.5), Y=(1.0, 4.0))
+    @test Extents.union(a, b; strict=true) === nothing
+    @test Extents.union(a, c) === nothing
 end
 
 @testset "intersect/intersects" begin
