@@ -86,7 +86,7 @@ extent(extent::Extent) = extent
 Check if two `Extent` objects intersect.
 
 Returns `true` if the extents of all common dimensions share some values
-including just the edge values of thier range.
+including just the edge values of their range.
 
 Dimensions that are not shared are ignored. The order of dimensions is also ignored.
 
