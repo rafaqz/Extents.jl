@@ -92,7 +92,7 @@ Dimensions that are not shared are ignored. The order of dimensions is also igno
 
 If there are no common dimensions, `false` is returned.
 """
-function intersects(ext1::Extent, ext2::Extent)
+function intersects(ext1::Extent, ext2::Extent; strict=false)
     keys = _shared_keys(ext1, ext2)
     if length(keys) == 0
         return false # Otherwise `all` returns `true` for empty tuples
@@ -114,7 +114,7 @@ intersects(obj1::Nothing, obj2::Nothing) = false
 Get the union of two extents, e.g. the combined extent of both objects
 for all dimensions.
 """
-function union(ext1::Extent, ext2::Extent)
+function union(ext1::Extent{K1}, ext2::Extent{K2}; strict=false) where {K1,K2}
     keys = _shared_keys(ext1, ext2)
     values = map(keys) do k
         k = unwrap(k)
@@ -155,10 +155,14 @@ function _bounds_intersect(b1::Tuple, b2::Tuple)
     (b1[1] <= b2[2] && b1[2] >= b2[1])
 end
 
+# _shared_keys uses a static `Val{k}` instead of a `Symbol` to
+# represent keys, because constant propagation fails through `reduce`
+# meaning most of the time of `union` or `intersect` is doing the `Symbol` lookup.
+# So we help the compiler out a little by doing manual constant propagation.
+# We know K1 and K2 at compile time, and wrapping them in `Val{k}() maintains
+# that through reduce. This makes union/intersect 15x faster, at ~10ns.
 function _shared_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
     reduce(K1; init=()) do acc, k
-        # Use a static Val{k} here instead of a Symbol
-        # This makes union/intersect 15x faster
         k in K2 ? (acc..., Val{k}()) : acc
     end
 end
