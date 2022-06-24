@@ -18,8 +18,9 @@ in the order the dimensions are used in the object.
 """
 struct Extent{K,V}
     bounds::NamedTuple{K,V}
-    function Extent{K,V}(bounds::NamedTuple{K,V}) where {K,V}
-        bounds = map(b -> promote(b...), bounds)
+    function Extent{K,V}(bounds::NamedTuple{K,V}) where {K, V <: NTuple{N,Tuple{Real, Real}}} where {N}
+        N == 0 && error("Extent needs at least one dimension")
+        bounds = map(b -> minmax(promote(b...)...), bounds)
         new{K,typeof(values(bounds))}(bounds)
     end
 end
