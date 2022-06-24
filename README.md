@@ -8,7 +8,7 @@
 Extents.jl is a small package that defines an `Extent` object that can be used by the
 different Julia spatial data packages. It is used in
 [GeoInterface.jl](https://github.com/JuliaGeo/GeoInterface.jl/), as the required return type
-for the `extent` function.
+for the `extent` function, and in [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl) and Rasters.jl [Rasters.jl](https://github.com/rafaqz/Rasters.jl) to subset arrays with named dimensions.
 
 # Quick start
 
