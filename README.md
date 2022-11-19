@@ -6,9 +6,11 @@
 [![Coverage](https://codecov.io/gh/rafaqz/Extents.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/rafaqz/Extents.jl)
 
 Extents.jl is a small package that defines an `Extent` object that can be used by the
-different Julia spatial data packages. It is used in
+different Julia spatial data packages. `Extent` is a wrapper for a NamedTuple of tuples
+holding the lower and upper bounds for each dimension of a object. It is used in
 [GeoInterface.jl](https://github.com/JuliaGeo/GeoInterface.jl/), as the required return type
-for the `extent` function, and in [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl) and Rasters.jl [Rasters.jl](https://github.com/rafaqz/Rasters.jl) to subset arrays with named dimensions.
+for the `extent` function, and in [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)
+and [Rasters.jl](https://github.com/rafaqz/Rasters.jl) to subset arrays with named dimensions.
 
 # Quick start
 
