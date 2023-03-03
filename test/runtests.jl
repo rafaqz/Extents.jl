@@ -16,13 +16,14 @@ ex3 = Extent(X=(1, 2), Y=(3, 4), Z=(5.0, 6.0))
     @test_throws ErrorException Extent()
     @test_throws MethodError Extent(X=(2,))
     @test_throws MethodError Extent(X=(2,3,4))
-    # with Real components
+    # needs isless; must be sortable
     @test_throws MethodError Extent(X=(Complex(1), Complex(2)))
-    @test_throws MethodError Extent(X=([1], [2]))
     # extents are sorted
     x = Extent(X=(2.0, 1), Y=(4,3))
     @test x.X === (1.0, 2.0)
     @test x.Y === (3, 4)
+    @test Extent(channel=('b', 'a')).channel  === ('a', 'b')
+    @test Extent(channel=("bee", "aa")).channel  === ("aa", "bee")
 end
 
 @testset "getindex" begin
