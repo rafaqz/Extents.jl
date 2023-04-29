@@ -150,7 +150,7 @@ union(obj1, obj2) = union(extent(obj1), extent(obj2))
 union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
 
 """
-    intersect(ext1::Extent, ext2::Extent; strict=false)
+    intersection(ext1::Extent, ext2::Extent; strict=false)
 
 Get the intersection of two extents as another `Extent`, e.g.
 the area covered by the shared dimensions for both extents.
@@ -158,7 +158,7 @@ the area covered by the shared dimensions for both extents.
 If there is no intersection for any shared dimension, `nothing` will be returned.
 When `strict=true`, any unshared dimensions cause the function to return `nothing`.
 """
-function intersect(ext1::Extent, ext2::Extent; strict=false)
+function intersection(ext1::Extent, ext2::Extent; strict=false)
     _maybe_keys_match(ext1, ext2, strict) || return nothing
     intersects(ext1, ext2) || return nothing
     keys = _shared_keys(ext1, ext2)
@@ -171,8 +171,11 @@ function intersect(ext1::Extent, ext2::Extent; strict=false)
     end
     return Extent{map(_unwrap, keys)}(values)
 end
-intersect(obj1, obj2) = intersect(extent(obj1), extent(obj2))
-intersect(obj1, obj2, obj3, objs...) = intersect(intersect(obj1, obj2), obj3, objs...)
+
+intersection(obj1, obj2) = intersection(extent(obj1), extent(obj2))
+intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2), obj3, objs...)
+
+@deprecate inersect instersection
 
 # Internal utils
 

@@ -43,16 +43,16 @@ end
     @test Extents.union(a, c) === nothing
 end
 
-@testset "intersect/intersects" begin
+@testset "intersection/intersects" begin
     a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
     b = Extent(X=(2.1, 2.5), Y=(3.0, 4.0), Z=(0.0, 1.0))
     c = Extent(X=(0.4, 2.5), Y=(1.5, 4.0), Z=(0.0, 1.0))
     d = Extent(A=(0.0, 1.0))
     @test Extents.intersects(a, b) == false
-    @test Extents.intersect(a, b) === nothing
+    @test Extents.intersection(a, b) === nothing
     @test Extents.intersects(a, c) == true
     @test Extents.intersects(a, c; strict=true) == false
-    @test Extents.intersect(a, c) == Extent(X=(0.4, 0.5), Y=(1.5, 2.0))
-    @test Extents.intersect(a, d) === nothing
-    @test Extents.intersect(a, c; strict=true) === nothing
+    @test Extents.intersection(a, c) == Extent(X=(0.4, 0.5), Y=(1.5, 2.0))
+    @test Extents.intersection(a, d) === nothing
+    @test Extents.intersection(a, c; strict=true) === nothing
 end
