@@ -57,18 +57,51 @@ end
     @test Extents.union(nothing, nothing) === nothing
 end
 
-@testset "intersection/intersects" begin
+@testset "intersection/intersects/contains/within" begin
     a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
     b = Extent(X=(2.1, 2.5), Y=(3.0, 4.0), Z=(0.0, 1.0))
     c = Extent(X=(0.4, 2.5), Y=(1.5, 4.0), Z=(0.0, 1.0))
-    d = Extent(A=(0.0, 1.0))
+    d = Extent(X=(0.2, 0.45))
+    e = Extent(A=(0.0, 1.0))
+
+    @test Extents.contains(a, b) == false
+    @test Extents.contains(b, a) == false
+    @test Extents.contains(a, c) == false
+    @test Extents.contains(c, a) == false
+    @test Extents.contains(b, c) == false
+    @test Extents.contains(c, b) == true
+    @test Extents.contains(c, b; strict=true) == true
+    @test Extents.contains(a, d) == true
+    @test Extents.contains(a, d; strict=true) == false
+    @test Extents.contains(d, a) == false
+    @test Extents.contains(a, e) == false
+    @test Extents.contains(e, a) == false
+
+    @test Extents.within(b, c) == true
+    @test Extents.within(b, c; strict=true) == true
+    @test Extents.within(c, b) == false
+    @test Extents.within(a, d) == false
+    @test Extents.within(d, a) == true
+    @test Extents.within(d, a; strict=true) == false
+
     @test Extents.intersects(a, b) == false
-    @test Extents.intersection(a, b) === nothing
+    @test Extents.intersects(b, a) == false
     @test Extents.intersects(a, c) == true
+    @test Extents.intersects(c, a) == true
+    @test Extents.intersects(a, d) == true
+    @test Extents.intersects(d, a) == true
     @test Extents.intersects(a, c; strict=true) == false
-    @test Extents.intersection(a, c) == Extent(X=(0.4, 0.5), Y=(1.5, 2.0))
-    @test Extents.intersection(a, d) === nothing
+    @test Extents.intersects(c, a; strict=true) == false
+
+    @test Extents.intersection(a, b) === nothing
+    @test Extents.intersection(b, a) === nothing
+    @test Extents.intersection(a, c) == Extents.intersection(c, a) == Extent(X=(0.4, 0.5), Y=(1.5, 2.0))
+    @test Extents.intersection(a, d) == Extents.intersection(d, a) == Extent(X=(0.2, 0.45))
+    @test Extents.intersection(a, e) === nothing
+    @test Extents.intersection(e, a) === nothing
     @test Extents.intersection(a, c; strict=true) === nothing
+    @test Extents.intersection(c, a; strict=true) === nothing
+
     @test Extents.intersection(a, nothing) === nothing
     @test Extents.intersection(nothing, nothing) === nothing
     @test Extents.intersection(nothing, b) === nothing

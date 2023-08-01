@@ -83,7 +83,7 @@ function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
 end
 
 function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1,K2}
-    _keys_match(a, b) || return false
+    _check_keys_match(a, b) || return false
     values_match = map(K1) do k
         bounds_a = a[k]
         bounds_b = b[k]
@@ -108,6 +108,42 @@ extent(extent) = nothing
 extent(extent::Extent) = extent
 
 """
+    contains(ext1::Extent, ext2::Extent; strict=false)
+
+Returns `true` if the extents of all common dimensions 
+of `ext1` contain `ext2`.
+
+Dimensions that are not shared are ignored by default, with `strict=false`.
+When `strict=true`, any unshared dimensions cause the function to return `false`.
+
+The order of dimensions is ignored in both cases.
+
+If there are no common dimensions, `false` is returned.
+"""
+function contains(ext1::Extent, ext2::Extent; strict=false)
+    _bounds_comparisons(_bounds_contain, ext1, ext2, strict)
+end
+contains(obj1, obj2) = contains(extent(obj1), extent(obj2))
+contains(obj1::Extent, obj2::Nothing) = false
+contains(obj1::Nothing, obj2::Extent) = false
+contains(obj1::Nothing, obj2::Nothing) = false
+
+"""
+    within(ext1::Extent, ext2::Extent; strict=false)
+
+Returns `true` if the extents of all common dimensions 
+of `ext1` are within `ext2`. 
+
+Dimensions that are not shared are ignored by default, with `strict=false`.
+When `strict=true`, any unshared dimensions cause the function to return `false`.
+
+The order of dimensions is ignored in both cases.
+
+If there are no common dimensions, `false` is returned.
+"""
+within(ext1, ext2; kw...) = contains(ext2, ext1; kw...)
+
+"""
     intersects(ext1::Extent, ext2::Extent; strict=false)
 
 Check if two `Extent` objects intersect.
@@ -123,16 +159,7 @@ The order of dimensions is ignored in both cases.
 If there are no common dimensions, `false` is returned.
 """
 function intersects(ext1::Extent, ext2::Extent; strict=false)
-    _maybe_keys_match(ext1, ext2, strict) || return false
-    keys = _shared_keys(ext1, ext2)
-    if length(keys) == 0
-        return false # Otherwise `all` returns `true` for empty tuples
-    else
-        dimintersections = map(keys) do k
-            _bounds_intersect(ext1[_unwrap(k)], ext2[_unwrap(k)])
-        end
-        return all(dimintersections)
-    end
+    _bounds_comparisons(_bounds_intersect, ext1, ext2, strict)
 end
 intersects(obj1, obj2) = intersects(extent(obj1), extent(obj2))
 intersects(obj1::Extent, obj2::Nothing) = false
@@ -149,7 +176,7 @@ Dimensions that are not shared are ignored by default, with `strict=false`.
 When `strict=true`, any unshared dimensions cause the function to return `nothing`.
 """
 function union(ext1::Extent, ext2::Extent; strict=false)
-    _maybe_keys_match(ext1, ext2, strict) || return nothing
+    _maybe_check_keys_match(ext1, ext2, strict) || return nothing
     keys = _shared_keys(ext1, ext2)
     if length(keys) == 0
         return nothing
@@ -180,7 +207,7 @@ If there is no intersection for any shared dimension, `nothing` will be returned
 When `strict=true`, any unshared dimensions cause the function to return `nothing`.
 """
 function intersection(ext1::Extent, ext2::Extent; strict=false)
-    _maybe_keys_match(ext1, ext2, strict) || return nothing
+    _maybe_check_keys_match(ext1, ext2, strict) || return nothing
     intersects(ext1, ext2) || return nothing
     keys = _shared_keys(ext1, ext2)
     values = map(keys) do k
@@ -226,17 +253,18 @@ buffer(ext::Nothing, buff) = nothing
 @deprecate inersect instersection
 
 # Internal utils
+
 _maybe_keys_match(ext1, ext2, strict) = !strict || _keys_match(ext1, ext2)
 
-function _keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
+# Keys
+
+_maybe_check_keys_match(ext1, ext2, strict) = !strict || _check_keys_match(ext1, ext2)
+
+function _check_keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
     length(K1) == length(K2) || return false
     keys_match = map(K2) do k
         k in K1
     end |> all
-end
-
-function _bounds_intersect(b1::Tuple, b2::Tuple)
-    (b1[1] <= b2[2] && b1[2] >= b2[1])
 end
 
 # _shared_keys uses a static `Val{k}` instead of a `Symbol` to
@@ -252,5 +280,23 @@ function _shared_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
 end
 
 _unwrap(::Val{X}) where {X} = X
+
+# Bounds
+
+function _bounds_comparisons(f, ext1, ext2, strict)
+    _maybe_check_keys_match(ext1, ext2, strict) || return false
+    keys = _shared_keys(ext1, ext2)
+    if length(keys) == 0
+        return false # Otherwise `all` returns `true` for empty tuples
+    else
+        dimintersections = map(keys) do k
+            f(ext1[_unwrap(k)], ext2[_unwrap(k)])
+        end
+        return all(dimintersections)
+    end
+end
+
+_bounds_intersect(b1::Tuple, b2::Tuple) = (b1[1] <= b2[2] && b1[2] >= b2[1])# || (b2[1] <= b1[2] && b2[2] >= b1[1])
+_bounds_contain(b1::Tuple, b2::Tuple) = (b1[1] <= b2[1] && b1[2] >= b2[2])
 
 end
