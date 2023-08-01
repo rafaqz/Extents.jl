@@ -2,6 +2,8 @@ module Extents
 
 export Extent, extent, bounds
 
+## DO NOT export anything else ##
+
 """
     Extent
 
@@ -64,12 +66,28 @@ Base.values(ext::Extent) = values(bounds(ext))
 Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
 
+function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
+    _keys_match(a, b) || return false
+    values_match = map(K1) do k
+        bounds_a = a[k]
+        bounds_b = b[k]
+        if isnothing(bounds_a) && isnothing(bounds_b) 
+            true
+        else
+            map(bounds_a, bounds_b) do val_a, val_b
+                isapprox(val_a, val_b; kw...)
+            end |> all
+        end
+    end
+    return all(values_match)
+end
+
 function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1,K2}
     _keys_match(a, b) || return false
     values_match = map(K1) do k
-        va = a[k]
-        vb = b[k]
-        isnothing(va) && isnothing(vb) || va == vb
+        bounds_a = a[k]
+        bounds_b = b[k]
+        isnothing(bounds_a) && isnothing(bounds_b) || bounds_a == bounds_b
     end
     return all(values_match)
 end
