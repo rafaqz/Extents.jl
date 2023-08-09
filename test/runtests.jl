@@ -25,8 +25,18 @@ end
 end
 
 @testset "equality" begin
+    @test ex1 == ex1
     @test ex1 == ex2
     @test ex1 != ex3
+end
+
+@testset "isapprox" begin
+    ex4 = Extent(X=(1.00000000000001, 2), Y=(3, 4))
+    ex5 = Extent(X=(1.1, 2), Y=(3, 4))
+    @test ex1 ≈ ex1
+    @test ex1 ≈ ex2
+    @test ex1 ≈ ex4
+    @test isapprox(ex1, ex5; atol=0.11)
 end
 
 @testset "properties" begin
