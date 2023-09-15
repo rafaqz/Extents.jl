@@ -379,10 +379,15 @@ function _bounds_comparisons(f, ext1, ext2, strict)
     if length(keys) == 0
         return false # Otherwise `all` returns `true` for empty tuples
     else
-        dimintersections = map(keys) do k
+        bounds_comparisons = map(keys) do k
             f(ext1[_unwrap(k)], ext2[_unwrap(k)])
         end
-        return all(dimintersections)
+        possible_comparisons = _skipnothing(bounds_comparisons...)
+        if length(possible_comparisons) == 0
+            return nothing
+        else
+            return all(possible_comparisons)
+        end
     end
 end
 
@@ -400,5 +405,18 @@ _bounds_overlap((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) =
 
 _bounds_equal((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
     (min_a == min_b && max_a == max_b)
+
+_skipnothing(v1, vals...) = (v1, _skipnothing(Base.tail(vals)...)
+_skipnothing(::Nothing, vals...) = _skipnothing(Base.tail(vals)...)
+_skipnothing() = ()
+
+# Handle `nothing` bounds for all methods
+for f in (:_bounds_intersect, :_bounds_contain, :_bounds_touch, :_bounds_overlap, :_bounds_equal)
+    @eval begin
+        $f(::Nothing, ::Tuple) = nothing 
+        $f(::Tuple, ::Tuple) = nothing 
+        $f(::Nothing, ::Nothing) = nothing 
+    end
+end
 
 end
