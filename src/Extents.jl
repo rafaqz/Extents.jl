@@ -50,7 +50,7 @@ function Base.getproperty(ext::Extent, key::Symbol)
     getproperty(bounds(ext), key)
 end
 
-Base.getindex(ext::Extent, keys::NTuple{<:Any,Symbol}) = Extent{keys}(bounds(ext))
+Base.getindex(ext::Extent, keys::NTuple{<:Any,Symbol}) = Extent{keys}(bounds(ext)[keys])
 Base.getindex(ext::Extent, keys::AbstractVector{Symbol}) = ext[Tuple(keys)]
 @inline function Base.getindex(ext::Extent, key::Symbol)
     haskey(bounds(ext), key) || throw(ErrorException("Extent has no field $key"))
@@ -107,18 +107,26 @@ function extent end
 extent(extent) = nothing
 extent(extent::Extent) = extent
 
+const STRICT_DOC = """
+Dimensions that are not shared are ignored by default with `strict=false`.
+When `strict=true`, any unshared dimensions cause the function to return `nothng`.
+"""
+
+const ORDER_DOC = """
+The order of dimensions is ignored in all cases.
+"""
+
 """
     contains(ext1::Extent, ext2::Extent; strict=false)
 
 Returns `true` if the extents of all common dimensions 
 of `ext1` contain `ext2`.
 
-Dimensions that are not shared are ignored by default, with `strict=false`.
-When `strict=true`, any unshared dimensions cause the function to return `false`.
-
-The order of dimensions is ignored in both cases.
+$STRICT_DOC
 
 If there are no common dimensions, `false` is returned.
+
+$ORDER_DOC
 """
 function contains(ext1::Extent, ext2::Extent; strict=false)
     _bounds_comparisons(_bounds_contain, ext1, ext2, strict)
@@ -134,12 +142,11 @@ contains(obj1::Nothing, obj2::Nothing) = false
 Returns `true` if the extents of all common dimensions 
 of `ext1` are within `ext2`. 
 
-Dimensions that are not shared are ignored by default, with `strict=false`.
-When `strict=true`, any unshared dimensions cause the function to return `false`.
-
-The order of dimensions is ignored in both cases.
+$STRICT_DOC
 
 If there are no common dimensions, `false` is returned.
+
+$ORDER_DOC
 """
 within(ext1, ext2; kw...) = contains(ext2, ext1; kw...)
 
@@ -148,15 +155,14 @@ within(ext1, ext2; kw...) = contains(ext2, ext1; kw...)
 
 Check if two `Extent` objects intersect.
 
-Returns `true` if the extents of all common dimensions share some values
-including just the edge values of their range.
+Returns `true` if the extents of all common dimensions share some 
+values, including just the edges of their range.
 
-Dimensions that are not shared are ignored by default, with `strict=false`.
-When `strict=true`, any unshared dimensions cause the function to return `false`.
+$STRICT_DOC
 
-The order of dimensions is ignored in both cases.
+If there are no common dimensions with `strict=false`, `false` is returned.
 
-If there are no common dimensions, `false` is returned.
+$ORDER_DOC
 """
 function intersects(ext1::Extent, ext2::Extent; strict=false)
     _bounds_comparisons(_bounds_intersect, ext1, ext2, strict)
@@ -167,13 +173,95 @@ intersects(obj1::Nothing, obj2::Extent) = false
 intersects(obj1::Nothing, obj2::Nothing) = false
 
 """
+    distjoint(ext1::Extent, ext2::Extent; strict=false)
+
+Check if two `Extent` objects are disjoint - the inverse of `intersects`.
+
+Returns `false` if the extents of all common dimensions share some values,
+including just the edge values of their range.
+
+$STRICT_DOC
+
+If there are no common dimensions when `strict=false`, `true` is returned.
+
+$ORDER_DOC
+"""
+function disjoint(obj1, obj2)
+    s = intersects(obj1, obj2)
+    return isnothing(x) ? nothing : !x
+end
+
+"""
+    touches(ext1::Extent, ext2::Extent; strict=false)
+
+Check if two `Extent` objects touch.
+
+Returns `true` if the extents of any common dimensions share boundaries.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+"""
+function touches(ext1::Extent, ext2::Extent; strict=false)
+    _bounds_comparisons(_bounds_touch, ext1, ext2, strict)
+end
+touches(obj1, obj2) = touches(extent(obj1), extent(obj2))
+touches(obj1::Extent, obj2::Nothing) = false
+touches(obj1::Nothing, obj2::Extent) = false
+touches(obj1::Nothing, obj2::Nothing) = false
+
+"""
+    overlaps(ext1::Extent, ext2::Extent; strict=false)
+
+Check if two `Extent` objects touch.
+
+Returns `true` if the extents of any common dimensions share boundaries.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+"""
+function overlaps(ext1::Extent, ext2::Extent; strict=false)
+    _bounds_comparisons(_bounds_overlap, ext1, ext2, strict)
+end
+overlaps(obj1, obj2) = overlaps(extent(obj1), extent(obj2))
+overlaps(obj1::Extent, obj2::Nothing) = false
+overlaps(obj1::Nothing, obj2::Extent) = false
+overlaps(obj1::Nothing, obj2::Nothing) = false
+
+"""
+    equals(ext1::Extent, ext2::Extent; strict=false)
+
+Check if two `Extent` are equal.
+
+Returns `true` if the extents of any common dimensions share boundaries.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+"""
+function equals(ext1::Extent, ext2::Extent; strict=false)
+    _bounds_comparisons(_bounds_overlap, ext1, ext2, strict)
+end
+equals(obj1, obj2) = equals(extent(obj1), extent(obj2))
+equals(obj1::Extent, obj2::Nothing) = false
+equals(obj1::Nothing, obj2::Extent) = false
+equals(obj1::Nothing, obj2::Nothing) = false
+
+
+"""
     union(ext1::Extent, ext2::Extent; strict=false)
 
 Get the union of two extents, e.g. the combined extent of both objects
 for all dimensions.
 
-Dimensions that are not shared are ignored by default, with `strict=false`.
-When `strict=true`, any unshared dimensions cause the function to return `nothing`.
+$ORDER_DOC
 """
 function union(ext1::Extent, ext2::Extent; strict=false)
     _maybe_check_keys_match(ext1, ext2, strict) || return nothing
@@ -204,7 +292,8 @@ Get the intersection of two extents as another `Extent`, e.g.
 the area covered by the shared dimensions for both extents.
 
 If there is no intersection for any shared dimension, `nothing` will be returned.
-When `strict=true`, any unshared dimensions cause the function to return `nothing`.
+
+$ORDER_DOC
 """
 function intersection(ext1::Extent, ext2::Extent; strict=false)
     _maybe_check_keys_match(ext1, ext2, strict) || return nothing
@@ -281,6 +370,7 @@ end
 
 _unwrap(::Val{X}) where {X} = X
 
+
 # Bounds
 
 function _bounds_comparisons(f, ext1, ext2, strict)
@@ -296,7 +386,19 @@ function _bounds_comparisons(f, ext1, ext2, strict)
     end
 end
 
-_bounds_intersect(b1::Tuple, b2::Tuple) = (b1[1] <= b2[2] && b1[2] >= b2[1])# || (b2[1] <= b1[2] && b2[2] >= b1[1])
-_bounds_contain(b1::Tuple, b2::Tuple) = (b1[1] <= b2[1] && b1[2] >= b2[2])
+_bounds_intersect((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+    (min_a <= min_b && max_a >= min_b) || (min_a <= max_b && max_a >= max_b)
+
+_bounds_contain((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+    (min_a <= min_b && max_a >= max_b)
+
+_bounds_touch((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+    (min_a == max_b || max_a == min_b)
+
+_bounds_overlap((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+    ((min_a < min_b && max_a > min_b) || (min_a < max_b && max_a > max_b)) && !(min_a == max_a && min_b == max_b)
+
+_bounds_equal((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+    (min_a == min_b && max_a == max_b)
 
 end
