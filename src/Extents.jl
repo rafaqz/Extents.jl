@@ -406,10 +406,6 @@ _bounds_overlap((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) =
 _bounds_equal((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
     (min_a == min_b && max_a == max_b)
 
-_skipnothing(v1, vals...) = (v1, _skipnothing(Base.tail(vals)...)
-_skipnothing(::Nothing, vals...) = _skipnothing(Base.tail(vals)...)
-_skipnothing() = ()
-
 # Handle `nothing` bounds for all methods
 for f in (:_bounds_intersect, :_bounds_contain, :_bounds_touch, :_bounds_overlap, :_bounds_equal)
     @eval begin
@@ -418,5 +414,9 @@ for f in (:_bounds_intersect, :_bounds_contain, :_bounds_touch, :_bounds_overlap
         $f(::Nothing, ::Nothing) = nothing 
     end
 end
+
+_skipnothing(v1, vals...) = (v1, _skipnothing(Base.tail(vals)...)
+_skipnothing(::Nothing, vals...) = _skipnothing(Base.tail(vals)...)
+_skipnothing() = ()
 
 end
