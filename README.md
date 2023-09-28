@@ -36,14 +36,28 @@ julia> # get the underlying NamedTuple
 julia> bounds(ext1)
 (X = (1.0, 2.0), Y = (3.0, 4.0))
 
-julia> # compare different extents
-
-julia> Extents.intersects(ext1, ext2)
-true
-
-julia> Extents.intersect(ext1, ext2)
+julia> Extents.intersection(ext1, ext2)
 Extent(X = (1.5, 2.0), Y = (3.0, 4.0))
 
 julia> Extents.union(ext1, ext2)
 Extent(X = (1.0, 2.5), Y = (3.0, 4.0))
 ```
+
+Extents.jl also defines spatial predicates following the 
+[DE-9IM](https://en.wikipedia.org/wiki/DE-9IM) standard.
+
+```julia-repl
+julia> Extents.intersects(ext1, ext2)
+true
+
+julia> Extents.disjoint(ext1, ext2)
+false
+
+julia> Extents.touches(ext1, ext2)
+false
+
+julia> Extents.overlaps(ext1, ext2)
+true
+```
+
+See [the docs](https://rafaqz.github.io/Extents.jl/stable) for all available methods.
