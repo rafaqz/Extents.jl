@@ -252,12 +252,12 @@ end
     @test Extents.equals(E(X=(2, 3), Y=(1, 4)), E(X=(2, 3), Y=(1, 4))) == true
     # Their order doesn't matter
     @test Extents.equals(E(X=(2, 3), Y=(1, 4)), E(Y=(1, 4), X=(2, 3))) == true
-    # Extra dimensions are just ignored
+    # We just ignore missing dimensions
     @test Extents.equals(E(X=(2, 3), Y=(1, 4), Z=(1, 2)), E(X=(2, 3), Y=(1, 4))) == true
-    # So adding a dimension can change the result
-    @test Extents.equals(E(X=(2, 3), Y=(1, 4), Z=(1, 2)), E(X=(2, 3), Y=(1, 4), Z=(0, 2))) == false
-    # Unless `strict` is true
+    # Except when `strict` is true
     @test Extents.equals(E(X=(2, 3), Y=(1, 4), Z=(1, 2)), E(X=(2, 3), Y=(1, 4)); strict=true) == false
+    # Adding a dimension can change the result
+    @test Extents.equals(E(X=(2, 3), Y=(1, 4), Z=(1, 2)), E(X=(2, 3), Y=(1, 4), Z=(0, 2))) == false
     # Nothing returns false
     @test Extents.equals(E(X=(2, 3), Y=(3, 4)), nothing) == false
     @test Extents.equals(nothing, E(X=(2, 3), Y=(3, 4))) == false
