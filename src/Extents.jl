@@ -71,7 +71,7 @@ Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
 
 function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
-    _keys_match(a, b) || return false
+    _check_keys_match(a, b) || return false
     values_match = map(K1) do k
         bounds_a = a[k]
         bounds_b = b[k]
