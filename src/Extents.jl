@@ -54,7 +54,7 @@ function Base.getproperty(ext::Extent, key::Symbol)
     getproperty(bounds(ext), key)
 end
 
-Base.getindex(ext::Extent, keys::NTuple{<:Any,Symbol}) = Extent{keys}(bounds(ext)[keys])
+Base.getindex(ext::Extent, keys::NTuple{<:Any,Symbol}) = Extent{keys}(bounds(ext))
 Base.getindex(ext::Extent, keys::AbstractVector{Symbol}) = ext[Tuple(keys)]
 @inline function Base.getindex(ext::Extent, key::Symbol)
     haskey(bounds(ext), key) || throw(ErrorException("Extent has no field $key"))
