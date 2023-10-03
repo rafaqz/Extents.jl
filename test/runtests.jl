@@ -51,6 +51,9 @@ end
     @test Extents.union(a, b) == Extent(X=(0.1, 2.5), Y=(1.0, 4.0))
     @test Extents.union(a, b; strict=true) === nothing
     @test Extents.union(a, c) === nothing
+    @test Extents.union(a, nothing) === a
+    @test Extents.union(nothing, a) === a
+    @test Extents.union(nothing, nothing) === nothing
 end
 
 @testset "intersection/intersects" begin
@@ -65,4 +68,7 @@ end
     @test Extents.intersection(a, c) == Extent(X=(0.4, 0.5), Y=(1.5, 2.0))
     @test Extents.intersection(a, d) === nothing
     @test Extents.intersection(a, c; strict=true) === nothing
+    @test Extents.intersection(a, nothing) === nothing
+    @test Extents.intersection(nothing, nothing) === nothing
+    @test Extents.intersection(nothing, b) === nothing
 end

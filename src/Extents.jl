@@ -164,6 +164,9 @@ function union(ext1::Extent, ext2::Extent; strict=false)
         return Extent{map(_unwrap, keys)}(values)
     end
 end
+union(obj1::Extent, ::Nothing) = obj1
+union(::Nothing, obj2::Extent) = obj2
+union(::Nothing, ::Nothing) = nothing
 union(obj1, obj2) = union(extent(obj1), extent(obj2))
 union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
 
@@ -189,7 +192,9 @@ function intersection(ext1::Extent, ext2::Extent; strict=false)
     end
     return Extent{map(_unwrap, keys)}(values)
 end
-
+intersection(obj1::Extent, obj2::Nothing) = nothing
+intersection(obj1::Nothing, obj2::Extent) = nothing
+intersection(obj1::Nothing, obj2::Nothing) = nothing
 intersection(obj1, obj2) = intersection(extent(obj1), extent(obj2))
 intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2), obj3, objs...)
 
