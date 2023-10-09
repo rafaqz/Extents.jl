@@ -135,11 +135,11 @@ function union(ext1::Extent, ext2::Extent; strict=false)
         return Extent{map(_unwrap, keys)}(values)
     end
 end
-union(a::Extent, ::Nothing) = a
-union(::Nothing, b::Extent) = b
-union(::Nothing, ::Nothing) = nothing
-union(a, b) = union(extent(a), extent(b))
-union(a, b, c, args...) = union(union(a, b), c, args...)
+union(a::Extent, ::Nothing; strict=false) = strict ? nothing : a
+union(::Nothing, b::Extent; strict=false) = strict ? nothing : b
+union(::Nothing, ::Nothing; kw...) = nothing
+union(a, b; kw...) = union(extent(a), extent(b))
+union(a, b, c, args...; kw...) = union(union(a, b), c, args...)
 
 """
     intersection(ext1::Extent, ext2::Extent; strict=false)
@@ -276,7 +276,7 @@ _intersect((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) =
     (min_a <= min_b && max_a >= min_b) || (min_b <= min_a && max_b >= min_a)
 
 """
-    distjoint(a::Extent, b::Extent; strict=false)
+    disjoint(a::Extent, b::Extent; strict=false)
 
 `a` and `b` are disjoint if they have no point in common
 (the inverse of [`intersects`](@ref)).
@@ -292,11 +292,7 @@ $ORDER_DOC
 
 $DE_9IM_DOC 
 """
-function disjoint(a, b; kw...)
-    # negates `intersects`
-    x = intersects(a, b; kw...)
-    return isnothing(x) ? nothing : !x
-end
+disjoint(a, b; kw...) = intersects(a, b; kw...) # negates `intersects`
 
 """
     touches(a::Extent, b::Extent; strict=false)
