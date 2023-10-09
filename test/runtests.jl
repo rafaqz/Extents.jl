@@ -72,3 +72,9 @@ end
     @test Extents.intersection(nothing, nothing) === nothing
     @test Extents.intersection(nothing, b) === nothing
 end
+
+@testset "buffer" begin
+    a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
+    @test Extents.buffer(a) == a
+    @test Extents.buffer(a, buff=(X=1, Y=2)) == Extent(X=(-0.9, 1.5), Y=(-1.0, 4.0))
+end

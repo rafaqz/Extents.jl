@@ -198,6 +198,18 @@ intersection(obj1::Nothing, obj2::Nothing) = nothing
 intersection(obj1, obj2) = intersection(extent(obj1), extent(obj2))
 intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2), obj3, objs...)
 
+"""
+    buffer(ext::Extent; buff = (X=0, Y=0))
+
+buffer `Extent` in X and Y by values supplied in `buff` named tuple
+"""
+function buffer(ext::Extent; buff = (X=0, Y=0))
+    x_new = ext.X .+ (-buff.X, +buff.X);
+    y_new = ext.Y .+ (-buff.Y, +buff.Y);
+    Extent(X=x_new, Y=y_new)
+end
+buffer(ext::Nothing; buff=(X=0, Y=0)) = nothing
+
 @deprecate inersect instersection
 
 # Internal utils
