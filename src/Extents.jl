@@ -292,7 +292,7 @@ $ORDER_DOC
 
 $DE_9IM_DOC 
 """
-disjoint(a, b; kw...) = intersects(a, b; kw...) # negates `intersects`
+disjoint(a, b; kw...) = !intersects(a, b; kw...)
 
 """
     touches(a::Extent, b::Extent; strict=false)
@@ -327,7 +327,7 @@ _touch((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a == max_b || max_a 
 At least one point of `b` lies in `a`, and no point of `b` lies in the exterior of `a`,
 Every point of `b` is a point in the interior or boundary of `a`. 
 
-Identical to [`coveredby`](@ref) with argument order reversedl
+Identical to [`coveredby`](@ref) with argument order reversed.
 
 $STRICT_DOC
 
@@ -347,7 +347,7 @@ _cover((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a <= min_b && max_a 
 At least one point of `a` lies in `b`, and no point of `a` lies in the exterior of `b`,
 Every point of `a` is a point in the interior or boundary of `b`. 
 
-Identical to [`covers`](@ref) with argument order reversedl
+Identical to [`covers`](@ref) with argument order reversed.
 
 $STRICT_DOC
 
