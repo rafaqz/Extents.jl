@@ -33,8 +33,9 @@ julia> values(ext)
 """
 struct Extent{K,V}
     bounds::NamedTuple{K,V}
-    function Extent{K,V}(bounds::NamedTuple{K,V}) where {K,V}
-        bounds = map(b -> promote(b...), bounds)
+    function Extent{K,V}(bounds::NamedTuple{K,V}) where {K, V <: NTuple{N,Tuple{Any, Any}}} where {N}
+        N == 0 && error("Extent needs at least one dimension")
+        bounds = map(b -> minmax(promote(b...)...), bounds)
         new{K,typeof(values(bounds))}(bounds)
     end
 end
