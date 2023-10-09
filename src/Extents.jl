@@ -203,7 +203,7 @@ intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2),
 
 buffer `Extent` in X and Y by values supplied in `buff` named tuple
 """
-function buffer(ext::Extent; buff = (X=0, Y=0))
+function buffer(ext::Extent{K}, buff::NamedTuple) where K
     x_new = ext.X .+ (-buff.X, +buff.X);
     y_new = ext.Y .+ (-buff.Y, +buff.Y);
     Extent(X=x_new, Y=y_new)
