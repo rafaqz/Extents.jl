@@ -199,13 +199,21 @@ intersection(obj1, obj2) = intersection(extent(obj1), extent(obj2))
 intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2), obj3, objs...)
 
 """
-    buffer(ext::Extent; buff = (X=0, Y=0))
+    buffer(ext::Extent, buff::NamedTuple)
 
-buffer `Extent` in X and Y by values supplied in `buff` named tuple
+buffer `Extent` by corresponding name-pair values supplied in `buff` NamedTuple.
+
+# Examples
+```julia-repl
+julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+julia> ext = Extents.buffer(ext, (X=1,Y=3))
+Extent(X = (0.0, 3.0), Y = (0.0, 7.0))
+```
 """
 function buffer(ext::Extent{K}, buff::NamedTuple) where K
     bounds = map(K) do k
-        if haskey(buf, K) 
+        if haskey(buff, k) 
             ext[k] .+ (-buff[k], +buff[k])
         else
             ext[k]
@@ -213,7 +221,7 @@ function buffer(ext::Extent{K}, buff::NamedTuple) where K
     end
     Extent{K}(bounds)
 end
-buffer(ext::Nothing; buff=(X=0, Y=0)) = nothing
+buffer(ext::Nothing, buff) = nothing
 
 @deprecate inersect instersection
 

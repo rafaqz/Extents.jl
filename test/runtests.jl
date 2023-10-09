@@ -75,6 +75,8 @@ end
 
 @testset "buffer" begin
     a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
-    @test Extents.buffer(a) == a
-    @test Extents.buffer(a, buff=(X=1, Y=2)) == Extent(X=(-0.9, 1.5), Y=(-1.0, 4.0))
+    b = Extent(Lat=(0.1, 0.5), Lon=(1.0, 2.0), Elev=(-3, 4))
+    @test Extents.buffer(a,(H=0,)) == a
+    @test Extents.buffer(a, (X=1, Y=2)) == Extent(X=(-0.9, 1.5), Y=(-1.0, 4.0))
+    @test Extents.buffer(b, (Lat=2, Lon=1)) == Extent(Lat=(-1.9, 2.5), Lon=(0.0, 3.0), Elev=(-3, 4))
 end
