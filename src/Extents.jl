@@ -211,7 +211,6 @@ function buffer(ext::Extent{K}, buff::NamedTuple) where K
             ext[k]
         end
     end
-    y_new = ext.Y .+ (-buff.Y, +buff.Y);
     Extent{K}(bounds)
 end
 buffer(ext::Nothing; buff=(X=0, Y=0)) = nothing
