@@ -206,7 +206,7 @@ buffer `Extent` in X and Y by values supplied in `buff` named tuple
 function buffer(ext::Extent{K}, buff::NamedTuple) where K
     x_new = ext.X .+ (-buff.X, +buff.X);
     y_new = ext.Y .+ (-buff.Y, +buff.Y);
-    Extent(X=x_new, Y=y_new)
+    Extent{K}(bounds)
 end
 buffer(ext::Nothing; buff=(X=0, Y=0)) = nothing
 
