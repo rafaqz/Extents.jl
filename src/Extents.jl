@@ -204,7 +204,13 @@ intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2),
 buffer `Extent` in X and Y by values supplied in `buff` named tuple
 """
 function buffer(ext::Extent{K}, buff::NamedTuple) where K
-    x_new = ext.X .+ (-buff.X, +buff.X);
+    bounds = map(K) do k
+        if haskey(buf, K) 
+            ext[k] .+ (-buff[k], +buff[k])
+        else
+            ext[k]
+        end
+    end
     y_new = ext.Y .+ (-buff.Y, +buff.Y);
     Extent{K}(bounds)
 end
