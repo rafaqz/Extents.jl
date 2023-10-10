@@ -211,10 +211,10 @@ julia> ext = Extents.buffer(ext, (X=1,Y=3))
 Extent(X = (0.0, 3.0), Y = (0.0, 7.0))
 ```
 """
-function buffer(ext::Extent{K}, buff::NamedTuple) where K
-    bounds = map(K) do k
-        if haskey(buff, k) 
-            ext[k] .+ (-buff[k], +buff[k])
+function buffer(ext::Extent{K}, buff::NamedTuple) where {K}
+    bounds = map(map(Val, K)) do k
+        if haskey(buff, _unwrap(k))
+            map(+, ext[_unwrap(k)], (-buff[_unwrap(k)], +buff[_unwrap(k)]))
         else
             ext[k]
         end
@@ -226,7 +226,7 @@ buffer(ext::Nothing, buff) = nothing
 @deprecate inersect instersection
 
 # Internal utils
-
+_unwrap(::Val{K}) where {K} = K
 _maybe_keys_match(ext1, ext2, strict) = !strict || _keys_match(ext1, ext2)
 
 function _keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
