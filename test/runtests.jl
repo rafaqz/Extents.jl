@@ -1,5 +1,6 @@
 using Extents
 using Test
+using Dates
 
 ex1 = Extent(X=(1, 2), Y=(3, 4))
 ex2 = Extent(Y=(3, 4), X=(1, 2))
@@ -71,4 +72,14 @@ end
     @test Extents.intersection(a, nothing) === nothing
     @test Extents.intersection(nothing, nothing) === nothing
     @test Extents.intersection(nothing, b) === nothing
+end
+
+@testset "buffer" begin
+    a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
+    b = Extent(Lat=(0.1, 0.5), Lon=(1.0, 2.0), Elev=(-3, 4))
+    c = Extent(X=(0.1, 0.5), Y=(1.0, 2.0), Ti=(DateTime(2000, 1, 1), DateTime(2020, 1, 1)))
+    @test Extents.buffer(a,(H=0,)) == a
+    @test Extents.buffer(a, (X=1, Y=2)) == Extent(X=(-0.9, 1.5), Y=(-1.0, 4.0))
+    @test Extents.buffer(b, (Lat=2, Lon=1)) == Extent(Lat=(-1.9, 2.5), Lon=(0.0, 3.0), Elev=(-3, 4))
+    @test Extents.buffer(c, (X=2, Y=2, Ti=Year(1))) == Extent(X=(-1.9, 2.5), Y=(-1.0, 4.0), Ti=(DateTime("1999-01-01T00:00:00"), DateTime("2021-01-01T00:00:00")))
 end
