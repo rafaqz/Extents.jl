@@ -226,7 +226,6 @@ buffer(ext::Nothing, buff) = nothing
 @deprecate inersect instersection
 
 # Internal utils
-_unwrap(::Val{K}) where {K} = K
 _maybe_keys_match(ext1, ext2, strict) = !strict || _keys_match(ext1, ext2)
 
 function _keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
