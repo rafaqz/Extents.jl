@@ -207,7 +207,7 @@ buffer `Extent` by corresponding name-pair values supplied in `buff` NamedTuple.
 ```julia-repl
 julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
-julia> ext = Extents.buffer(ext, (X=1,Y=3))
+julia> ext_buffered = Extents.buffer(ext, (X=1, Y=3))
 Extent(X = (0.0, 3.0), Y = (0.0, 7.0))
 ```
 """
