@@ -216,7 +216,7 @@ function buffer(ext::Extent{K}, buff::NamedTuple) where {K}
         if haskey(buff, _unwrap(k))
             map(+, ext[_unwrap(k)], (-buff[_unwrap(k)], +buff[_unwrap(k)]))
         else
-            ext[k]
+            ext[_unwrap(k)]
         end
     end
     Extent{K}(bounds)
