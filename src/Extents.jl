@@ -4,6 +4,10 @@ export Extent, extent, bounds
 
 ## DO NOT export anything else ##
 
+const ORDER_DOC = """
+The order of dimensions is ignored in all cases.
+"""
+
 """
     Extent
 
@@ -67,7 +71,7 @@ Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
 
 function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
-    _keys_match(a, b) || return false
+    _check_keys_match(a, b) || return false
     values_match = map(K1) do k
         bounds_a = a[k]
         bounds_b = b[k]
@@ -83,7 +87,7 @@ function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
 end
 
 function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1,K2}
-    _keys_match(a, b) || return false
+    _check_keys_match(a, b) || return false
     values_match = map(K1) do k
         bounds_a = a[k]
         bounds_b = b[k]
@@ -108,48 +112,15 @@ extent(extent) = nothing
 extent(extent::Extent) = extent
 
 """
-    intersects(ext1::Extent, ext2::Extent; strict=false)
-
-Check if two `Extent` objects intersect.
-
-Returns `true` if the extents of all common dimensions share some values
-including just the edge values of their range.
-
-Dimensions that are not shared are ignored by default, with `strict=false`.
-When `strict=true`, any unshared dimensions cause the function to return `false`.
-
-The order of dimensions is ignored in both cases.
-
-If there are no common dimensions, `false` is returned.
-"""
-function intersects(ext1::Extent, ext2::Extent; strict=false)
-    _maybe_keys_match(ext1, ext2, strict) || return false
-    keys = _shared_keys(ext1, ext2)
-    if length(keys) == 0
-        return false # Otherwise `all` returns `true` for empty tuples
-    else
-        dimintersections = map(keys) do k
-            _bounds_intersect(ext1[_unwrap(k)], ext2[_unwrap(k)])
-        end
-        return all(dimintersections)
-    end
-end
-intersects(obj1, obj2) = intersects(extent(obj1), extent(obj2))
-intersects(obj1::Extent, obj2::Nothing) = false
-intersects(obj1::Nothing, obj2::Extent) = false
-intersects(obj1::Nothing, obj2::Nothing) = false
-
-"""
     union(ext1::Extent, ext2::Extent; strict=false)
 
 Get the union of two extents, e.g. the combined extent of both objects
 for all dimensions.
 
-Dimensions that are not shared are ignored by default, with `strict=false`.
-When `strict=true`, any unshared dimensions cause the function to return `nothing`.
+$ORDER_DOC
 """
 function union(ext1::Extent, ext2::Extent; strict=false)
-    _maybe_keys_match(ext1, ext2, strict) || return nothing
+    _maybe_check_keys_match(ext1, ext2, strict) || return nothing
     keys = _shared_keys(ext1, ext2)
     if length(keys) == 0
         return nothing
@@ -164,11 +135,11 @@ function union(ext1::Extent, ext2::Extent; strict=false)
         return Extent{map(_unwrap, keys)}(values)
     end
 end
-union(obj1::Extent, ::Nothing) = obj1
-union(::Nothing, obj2::Extent) = obj2
-union(::Nothing, ::Nothing) = nothing
-union(obj1, obj2) = union(extent(obj1), extent(obj2))
-union(obj1, obj2, obj3, objs...) = union(union(obj1, obj2), obj3, objs...)
+union(a::Extent, ::Nothing; strict=false) = strict ? nothing : a
+union(::Nothing, b::Extent; strict=false) = strict ? nothing : b
+union(::Nothing, ::Nothing; kw...) = nothing
+union(a, b; kw...) = union(extent(a), extent(b))
+union(a, b, c, args...; kw...) = union(union(a, b), c, args...)
 
 """
     intersection(ext1::Extent, ext2::Extent; strict=false)
@@ -177,26 +148,29 @@ Get the intersection of two extents as another `Extent`, e.g.
 the area covered by the shared dimensions for both extents.
 
 If there is no intersection for any shared dimension, `nothing` will be returned.
-When `strict=true`, any unshared dimensions cause the function to return `nothing`.
+
+$ORDER_DOC
 """
-function intersection(ext1::Extent, ext2::Extent; strict=false)
-    _maybe_keys_match(ext1, ext2, strict) || return nothing
-    intersects(ext1, ext2) || return nothing
-    keys = _shared_keys(ext1, ext2)
+function intersection(a::Extent, b::Extent; strict=false)
+    _maybe_check_keys_match(a, b, strict) || return nothing
+    intersects(a, b) || return nothing
+    keys = _shared_keys(a, b)
     values = map(keys) do k
+        # Get a symbol from `Val{:k}`
         k = _unwrap(k)
-        k_exts = (ext1[k], ext2[k])
-        a = max(map(first, k_exts)...)
-        b = min(map(last, k_exts)...)
-        (a, b)
+        # Acces the k symbol of `a` and `b`
+        k_exts = (a[k], b[k])
+        maxs = max(map(first, k_exts)...)
+        mins = min(map(last, k_exts)...)
+        (maxs, mins)
     end
     return Extent{map(_unwrap, keys)}(values)
 end
-intersection(obj1::Extent, obj2::Nothing) = nothing
-intersection(obj1::Nothing, obj2::Extent) = nothing
-intersection(obj1::Nothing, obj2::Nothing) = nothing
-intersection(obj1, obj2) = intersection(extent(obj1), extent(obj2))
-intersection(obj1, obj2, obj3, objs...) = intersection(intersection(obj1, obj2), obj3, objs...)
+intersection(a::Extent, b::Nothing; kw...) = nothing
+intersection(a::Nothing, b::Extent; kw...) = nothing
+intersection(a::Nothing, b::Nothing; kw...) = nothing
+intersection(a, b; kw...) = intersection(extent(a), extent(b); kw...)
+intersection(a, b, c, args...; kw...) = intersection(intersection(a, b), c, args...; kw...)
 
 """
     buffer(ext::Extent, buff::NamedTuple)
@@ -225,18 +199,244 @@ buffer(ext::Nothing, buff) = nothing
 
 @deprecate inersect instersection
 
+
+# DE_9IM predicates
+
+const STRICT_DOC = """
+Dimensions that are not shared are ignored by default with `strict=false`.
+When `strict=true`, any unshared dimensions cause the function to return `nothng`.
+"""
+
+const DE_9IM_DOC = """
+Conforms to the DE-9IM spatial predicates standard
+https://en.wikipedia.org/wiki/DE-9IM
+"""
+
+"""
+    contains(a::Extent, b::Extent; strict=false)
+
+`a` contains `b` if no points of `b` lie in the exterior of `a`, and 
+at least one point of the interior of `b` lies in the interior of `a`.
+If `b` has no interior points it is not contained in `a`.
+
+Identical to [`within`](@ref) with argument order reversed.
+
+$STRICT_DOC
+
+If there are no common dimensions, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC
+"""
+contains(a::Extent, b::Extent; strict=false) = _do_bounds(all, _contain, a, b, strict)
+
+# Must contain interior points, not just boundary
+_contain(a::Tuple, b::Tuple) = _cover(a, b) && _hasinterior(b)
+
+"""
+    within(a::Extent, b::Extent; strict=false)
+
+`a` is within `b` if no points of `a` lie in the exterior of `b`, and 
+at least one point of the interior of `a` lies in the interior of `b`.
+If `a` has no interior points it is not contained in `b`.
+
+Identical to [`contains`](@ref) with argument order reversed.
+
+$STRICT_DOC
+
+If there are no common dimensions, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+within(a, b; kw...) = contains(b, a; kw...) # swapped order of `contains`
+
+"""
+    intersects(a::Extent, b::Extent; strict=false)
+
+`a` intersects `b` if `a` and `b` have at least one point in common
+(the inverse of [`disjoint`](@ref)).
+
+Returns `true` if the extents of all common dimensions share some values,
+including just the edge values of their range.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+intersects(a::Extent, b::Extent; strict=false) = _do_bounds(all, _intersect, a, b, strict)
+
+_intersect((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+    (min_a <= min_b && max_a >= min_b) || (min_b <= min_a && max_b >= min_a)
+
+"""
+    disjoint(a::Extent, b::Extent; strict=false)
+
+`a` and `b` are disjoint if they have no point in common
+(the inverse of [`intersects`](@ref)).
+
+Returns `false` if the extents of all common dimensions share some values,
+including just the edge values of their range.
+
+$STRICT_DOC
+
+If there are no common dimensions when `strict=false`, `true` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+disjoint(a, b; kw...) = !intersects(a, b; kw...)
+
+"""
+    touches(a::Extent, b::Extent; strict=false)
+
+`a` and `b` have at least one point in common, but their interiors do not intersect. 
+
+Returns `true` if the extents of any common dimensions share boundaries.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+function touches(a::Extent, b::Extent; strict=false)
+    if intersects(a, b)
+        # At least one bound must just touch
+        _do_bounds(any, _touch, a, b, strict)
+    else
+        false
+    end
+end
+
+_touch((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a == max_b || max_a == min_b)
+
+
+"""
+    covers(a::Extent, b::Extent; strict=false)
+
+At least one point of `b` lies in `a`, and no point of `b` lies in the exterior of `a`,
+Every point of `b` is a point in the interior or boundary of `a`. 
+
+Identical to [`coveredby`](@ref) with argument order reversed.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+covers(a::Extent, b::Extent; strict=false) = _do_bounds(all, _cover, a, b, strict)
+
+_cover((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a <= min_b && max_a >= max_b)
+
+"""
+    coveredby(a::Extent, b::Extent; strict=false)
+
+At least one point of `a` lies in `b`, and no point of `a` lies in the exterior of `b`,
+Every point of `a` is a point in the interior or boundary of `b`. 
+
+Identical to [`covers`](@ref) with argument order reversed.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+coveredby(a, b; kw...) = covers(b, a; kw...) # swapped order of `covers`
+
+
+"""
+    overlaps(a::Extent, b::Extent; strict=false)
+
+`a` overlaps `b`: they have some but not all points in common, 
+they have the same dimension, and the intersection of the interiors
+of the two geometries has the same dimension as the geometries themselves.
+
+Returns `true` if the extents of common dimensions overlap.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+function overlaps(a::Extent, b::Extent; strict=false)
+    if intersects(a, b; strict)
+        # Bounds can't just touch, they must share interior points
+        !_do_bounds(any, _touch, a, b, strict)
+    else
+        false
+    end
+end
+
+"""
+    equals(a::Extent, b::Extent; strict=false)
+
+`a` and `b` are topologically equal: their interiors intersect and no part
+of the interior or boundary of one intersects the exterior of the other.
+
+$STRICT_DOC
+
+If there are no common dimensions with `strict=false`, `false` is returned.
+
+$ORDER_DOC
+
+$DE_9IM_DOC 
+"""
+equals(a::Extent, b::Extent; strict=false) = _do_bounds(all, _equal, a, b, strict)
+
+_equal(a::Tuple, b::Tuple) = a == b
+
+# Handle `nothing` bounds for all methods
+for f in (:_intersect, :_cover, :_contain, :_touch, :_equal)
+    @eval begin
+        $f(::Nothing, ::Tuple) = nothing 
+        $f(::Tuple, ::Nothing) = nothing 
+        $f(::Nothing, ::Nothing) = nothing 
+    end
+end
+
+# Handle objects with `extent` methods and `nothing` extents
+for f in (:intersects, :covers, :contains, :touches, :equals, :overlaps)
+    @eval begin
+        $f(a, b; kw...) = $f(extent(a), extent(b); kw...)
+        $f(a::Extent, b::Nothing; kw...) = false
+        $f(a::Nothing, b::Extent; kw...) = false
+        $f(a::Nothing, b::Nothing; kw...) = false
+    end
+end
+
+
 # Internal utils
+
 _maybe_keys_match(ext1, ext2, strict) = !strict || _keys_match(ext1, ext2)
 
-function _keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
+# Keys
+
+_maybe_check_keys_match(a, b, strict) = !strict || _check_keys_match(a, b)
+
+function _check_keys_match(::Extent{K1}, ::Extent{K2}) where {K1,K2}
     length(K1) == length(K2) || return false
     keys_match = map(K2) do k
         k in K1
     end |> all
-end
-
-function _bounds_intersect(b1::Tuple, b2::Tuple)
-    (b1[1] <= b2[2] && b1[2] >= b2[1])
 end
 
 # _shared_keys uses a static `Val{k}` instead of a `Symbol` to
@@ -252,5 +452,37 @@ function _shared_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
 end
 
 _unwrap(::Val{X}) where {X} = X
+
+
+# Bounds comparisons
+
+# compare all bounds and reduce the result to a Bool or `nothing`
+# Running `compare` and `boolreduce` should be the only runtime costs
+function _do_bounds(boolreduce::Function, compare::Function, a::Extent, b::Extent, strict::Bool)
+    _maybe_check_keys_match(a, b, strict) || return false
+    keys = _shared_keys(a, b)
+    if length(keys) == 0
+        # There are no shared dimensions. Maybe this should return `nothing`?
+        # But we need to handle it otherwise `all` returns `true` for empty tuples
+        return false 
+    else
+        maybe_comparisons = map(keys) do k
+            compare(a[_unwrap(k)], b[_unwrap(k)])
+        end
+        comparisons = _skipnothing(maybe_comparisons...)
+        if length(comparisons) == 0
+            return nothing
+        else
+            return boolreduce(comparisons)
+        end
+    end
+end
+
+_skipnothing(v1, vals...) = (v1, _skipnothing(vals...)...)
+_skipnothing(::Nothing, vals...) = _skipnothing(vals...)
+_skipnothing() = ()
+
+_hasinterior(ex::Extent) = all(map(_hasinterior, bounds(ex)))
+_hasinterior((min, max)::Tuple) = min != max
 
 end
