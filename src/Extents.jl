@@ -197,9 +197,6 @@ function buffer(ext::Extent{K}, buff::NamedTuple) where {K}
 end
 buffer(ext::Nothing, buff) = nothing
 
-@deprecate inersect instersection
-
-
 # DE_9IM predicates
 
 const STRICT_DOC = """
