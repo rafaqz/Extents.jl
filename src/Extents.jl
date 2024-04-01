@@ -49,7 +49,7 @@ Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
 
 bounds(ext::Extent) = getfield(ext, :bounds)
 
-function Base.getproperty(ext::Extent, key::Symbol)
+@inline function Base.getproperty(ext::Extent, key::Symbol)
     haskey(bounds(ext), key) || _ext_no_key(key)
     getproperty(bounds(ext), key)
 end
