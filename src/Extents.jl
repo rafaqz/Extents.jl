@@ -50,18 +50,18 @@ Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
 bounds(ext::Extent) = getfield(ext, :bounds)
 
 function Base.getproperty(ext::Extent, key::Symbol)
-    haskey(bounds(ext), key) || throw(ErrorException("Extent has no field $key"))
+    haskey(bounds(ext), key) || _ext_no_key(key)
     getproperty(bounds(ext), key)
 end
 
-Base.getindex(ext::Extent, keys::NTuple{<:Any,Symbol}) = Extent{keys}(bounds(ext))
-Base.getindex(ext::Extent, keys::AbstractVector{Symbol}) = ext[Tuple(keys)]
+@inline Base.getindex(ext::Extent, keys::NTuple{<:Any,Symbol}) = Extent{keys}(bounds(ext))
+@inline Base.getindex(ext::Extent, keys::AbstractVector{Symbol}) = ext[Tuple(keys)]
 @inline function Base.getindex(ext::Extent, key::Symbol)
-    haskey(bounds(ext), key) || throw(ErrorException("Extent has no field $key"))
+    haskey(bounds(ext), key) || _ext_no_key(key)
     getindex(bounds(ext), key)
 end
-@inline function Base.getindex(ext::Extent, i::Int)
-    haskey(bounds(ext), i) || throw(ErrorException("Extent has no field $i"))
+Base.@propagate_inbounds function Base.getindex(ext::Extent, i::Int)
+    haskey(bounds(ext), i) || _ext_no_key(i)
     getindex(bounds(ext), i)
 end
 Base.haskey(ext::Extent, x) = haskey(bounds(ext), x)
@@ -447,6 +447,8 @@ function _shared_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
         k in K2 ? (acc..., Val{k}()) : acc
     end
 end
+
+@noinline _ext_no_key(key) = throw(ErrorException("Extent has no field $key"))
 
 _unwrap(::Val{X}) where {X} = X
 
