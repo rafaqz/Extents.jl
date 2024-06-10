@@ -17,7 +17,7 @@ end
 
 @testset "getproperty" begin
     @test ex3.X == (1, 2)
-    @test propertynames(ex3) == (:X,:Y, :Z)
+    @test propertynames(ex3) == (:X, :Y, :Z)
 end
 
 @testset "bounds" begin
