@@ -128,9 +128,9 @@ function union(ext1::Extent, ext2::Extent; strict=false)
     else
         values = map(keys) do k
             k = _unwrap(k)
-            e1, e2 = ext1[k], ext2[k]
-            a = _nanfree(min, e1[1], e2[1])
-            b = _nanfree(max, e1[2], e2[2])
+            b1, b2 = ext1[k], ext2[k]
+            a = _nanfree(min, b1[1], b2[1])
+            b = _nanfree(max, b1[2], b2[2])
             (a, b)
         end
         return Extent{map(_unwrap, keys)}(values)
@@ -167,9 +167,9 @@ function intersection(a::Extent, b::Extent; strict=false)
         # Get a symbol from `Val{:k}`
         k = _unwrap(k)
         # Acces the k symbol of `a` and `b`
-        ea, eb = a[k], b[k]
-        maxs = _nanfree(max, ea[1], eb[1])
-        mins = _nanfree(min, ea[2], eb[2]) 
+        ba, bb = a[k], b[k]
+        maxs = _nanfree(max, ba[1], bb[1])
+        mins = _nanfree(min, ba[2], bb[2]) 
         (maxs, mins)
     end
     return Extent{map(_unwrap, keys)}(values)
