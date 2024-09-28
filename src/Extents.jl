@@ -8,6 +8,34 @@ const ORDER_DOC = """
 The order of dimensions is ignored in all cases.
 """
 
+abstract type AbstractBounds{T} end
+
+Base.getindex(b::AbstractBounds, i) = b.bounds[i]
+Base.first(b::AbstractBounds) = b[1]
+Base.last(b::AbstractBounds) = b[2]
+Base.iterate(b::AbstractBounds, args...) = iterate(b.bounds, args...)
+
+struct Bounds{T,C} <: AbstractBounds{T}
+    bounds::Tuple{T,T}
+    crs::C
+end
+Bounds(bounds::Tuple{<:Any,<:Any}; crs=nothing) = Bounds(bounds, crs)
+Bounds(a, b; kw...) = Bounds(promote(a, b); kw...)
+
+Base.show(io::IO, bs::Bounds) = 
+    print(io, "$(typeof(bs).name.wrapper)($(bs[1]), $(bs[2]))")
+
+struct Cyclic{T,C} <: AbstractBounds{T}
+    bounds::Tuple{T,T}
+    cycle::Tuple{T,T}
+    crs::C
+end
+Cyclic(a, b; kw...) = Cyclic(promote(a, b); kw...)
+Cyclic(bounds::Tuple{<:Any,<:Any}; cycle, crs=nothing) = Cyclic(bounds, cycle, crs)
+
+Base.show(io::IO, bs::Cyclic) = 
+    print(io, "$(typeof(bs).name.wrapper)($(bs[1]), $(bs[2]); cycle=$(bs.cycle))")
+
 """
     Extent
 
@@ -38,7 +66,7 @@ julia> values(ext)
 struct Extent{K,V}
     bounds::NamedTuple{K,V}
     function Extent{K,V}(bounds::NamedTuple{K,V}) where {K,V}
-        bounds = map(b -> promote(b...), bounds)
+        bounds = map(_promote, bounds)
         new{K,typeof(values(bounds))}(bounds)
     end
 end
@@ -46,6 +74,9 @@ Extent(; kw...) = Extent(values(kw))
 Extent{K}(vals::V) where {K,V} = Extent{K,V}(NamedTuple{K,V}(vals))
 Extent{K1}(vals::NamedTuple{K2,V}) where {K1,K2,V} = Extent(NamedTuple{K1}(vals))
 Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
+
+_promote(b::Tuple) = promote(b...)
+_promote(b::AbstractBounds) = b
 
 bounds(ext::Extent) = getfield(ext, :bounds)
 
@@ -230,7 +261,7 @@ $DE_9IM_DOC
 contains(a::Extent, b::Extent; strict=false) = _do_bounds(all, _contain, a, b, strict)
 
 # Must contain interior points, not just boundary
-_contain(a::Tuple, b::Tuple) = _cover(a, b) && _hasinterior(b)
+_contain(a, b) = _cover(a, b) && _hasinterior(b)
 
 """
     within(a::Extent, b::Extent; strict=false)
@@ -270,7 +301,7 @@ $DE_9IM_DOC
 """
 intersects(a::Extent, b::Extent; strict=false) = _do_bounds(all, _intersect, a, b, strict)
 
-_intersect((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+_intersect((min_a, max_a), (min_b, max_b)) = 
     (min_a <= min_b && max_a >= min_b) || (min_b <= min_a && max_b >= min_a)
 
 """
@@ -316,7 +347,7 @@ function touches(a::Extent, b::Extent; strict=false)
     end
 end
 
-_touch((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a == max_b || max_a == min_b)
+_touch((min_a, max_a), (min_b, max_b)) = (min_a == max_b || max_a == min_b)
 
 
 """
@@ -337,7 +368,7 @@ $DE_9IM_DOC
 """
 covers(a::Extent, b::Extent; strict=false) = _do_bounds(all, _cover, a, b, strict)
 
-_cover((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a <= min_b && max_a >= max_b)
+_cover((min_a, max_a), (min_b, max_b)) = (min_a <= min_b && max_a >= max_b)
 
 """
     coveredby(a::Extent, b::Extent; strict=false)
@@ -400,13 +431,13 @@ $DE_9IM_DOC
 """
 equals(a::Extent, b::Extent; strict=false) = _do_bounds(all, _equal, a, b, strict)
 
-_equal(a::Tuple, b::Tuple) = a == b
+_equal(a, b) = a == b
 
 # Handle `nothing` bounds for all methods
 for f in (:_intersect, :_cover, :_contain, :_touch, :_equal)
     @eval begin
-        $f(::Nothing, ::Tuple) = nothing 
-        $f(::Tuple, ::Nothing) = nothing 
+        $f(::Nothing, ::Union{Tuple,AbstractBounds}) = nothing 
+        $f(::Union{Tuple,AbstractBounds}, ::Nothing) = nothing 
         $f(::Nothing, ::Nothing) = nothing 
     end
 end
@@ -483,6 +514,6 @@ _skipnothing(::Nothing, vals...) = _skipnothing(vals...)
 _skipnothing() = ()
 
 _hasinterior(ex::Extent) = all(map(_hasinterior, bounds(ex)))
-_hasinterior((min, max)::Tuple) = min != max
+_hasinterior((min, max)) = min != max
 
 end
