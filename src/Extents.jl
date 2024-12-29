@@ -43,7 +43,9 @@ struct Extent{K,V}
     end
 end
 Extent(; kw...) = Extent(values(kw))
-Extent{K}(vals::V) where {K,V} = Extent{K,V}(NamedTuple{K,V}(vals))
+# Allow vectors or tuples
+Extent{K}(vals) where {K} = Extent{K}(NamedTuple{K}(vals))
+# Subset K2 to K1
 Extent{K1}(vals::NamedTuple{K2,V}) where {K1,K2,V} = Extent(NamedTuple{K1}(vals))
 Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
 
@@ -70,6 +72,7 @@ Base.keys(ext::Extent) = keys(bounds(ext))
 Base.values(ext::Extent) = values(bounds(ext))
 Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
+Base.map(f, ext::Extent) = Extent(map(f, bounds(ext)))
 
 function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
     _check_keys_match(a, b) || return false
@@ -97,7 +100,7 @@ function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1,K2}
     return all(values_match)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", extent::Extent)
+function Base.show(io::IO, extent::Extent)
     print(io, "Extent")
     show(io, bounds(extent))
 end
@@ -484,5 +487,98 @@ _skipnothing() = ()
 
 _hasinterior(ex::Extent) = all(map(_hasinterior, bounds(ex)))
 _hasinterior((min, max)::Tuple) = min != max
+
+
+"""
+    grow(ext::Extent, x)
+    grow(ext::Extent; kw...)
+
+grow the bounds of the extent by `x`, as a fraction of the current size of the extent.
+
+If `x` is a `Tuple` the lower and upper bounds are grow by those amounts.
+
+Keyword arguments or a `NamedTuple` also be passed, with the same or a subset 
+of the keys as `ext`.  This can hold `Real` or `Tuple{Real,Real}` values for 
+each named dimension.
+
+## Examples
+```jldoctest
+julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+
+julia> grow(ext, 0.5)
+
+````
+"""
+function grow(ext::Extent, x::Union{Real,Tuple{<:Real,<:Real}})
+    map(ext) do bs
+        _grow(bs, x)
+    end
+end
+function grow(ext::Extent{K1}, xs::NamedTuple{K2}) where {K1,K2}
+    map(K1) do k
+        if k in K2
+            _grow(ext[k], xs[k])
+        else
+            ext[k]
+        end
+    end |> Extent{K1}
+end
+grow(ext::Extent; kw...) = grow(ext, NamedTuple(kw))
+
+function _grow(bs, x::Real)
+    amount = (bs[2] - bs[1]) * x
+    (bs[1] - amount, bs[2] + amount)
+end
+function _grow(bs, x::Tuple{Real,Real})
+    range = (bs[2] - bs[1]) 
+    (bs[1] - x * grow[1], bs[2] + range * x[2])
+end
+
+"""
+    pad(ext::Extent, x)
+    pad(ext::Extent; kw...)
+
+Pad the bounds of the extent by `x`.
+
+If `x` is a `Tuple` the lower and upper bounds are paded by those amounts.
+
+Keyword arguments or a `NamedTuple` may also be passed, with the same or a subset 
+of the keys as `ext`. This can hold `Real` or `Tuple{Real,Real}` values for 
+each named dimension.
+
+## Examples
+```jldoctest
+julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+
+julia> Extents.pad(ext, 0.5)
+Extent(X = (0.5, 2.5), Y = (2.5, 4.5))
+
+julia> Extents.pad(ext, (0.5, 1.0))
+Extent(X = (0.5, 3.0), Y = (2.5, 5.0))
+
+julia> Extents.pad(ext; X=0.5)
+Extent(X = (0.5, 2.5), Y = (3.0, 4.0))
+````
+"""
+function pad(ext::Extent, x)
+    map(ext) do bs
+        _pad(bs, x)
+    end
+end
+function pad(ext::Extent{K1}, xs::NamedTuple{K2}) where {K1,K2}
+    map(K1) do k
+        if k in K2
+            _pad(ext[k], xs[k])
+        else
+            ext[k]
+        end
+    end |> Extent{K1}
+end
+pad(ext::Extent; kw...) = pad(ext, NamedTuple(kw))
+
+_pad(bs, x::Real) = (bs[1] - x, bs[2] + x)
+_pad(bs, x::Tuple{Real,Real}) = (bs[1] - x[1], bs[2] + x[2])
 
 end
