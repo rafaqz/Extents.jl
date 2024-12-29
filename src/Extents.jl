@@ -502,11 +502,13 @@ of the keys as `ext`.  This can hold `Real` or `Tuple{Real,Real}` values for
 each named dimension.
 
 ## Examples
-```jldoctest
-julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
-Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 
-julia> grow(ext, 0.5)
+```jldoctest
+julia> ext = Extent(X = (1.0, 1.8), Y = (3.0, 5.0))
+Extent(X = (1.0, 1.8), Y = (3.0, 5.0))
+
+julia> Extents.grow(ext, 0.5) 
+Extent(X = (0.6, 2.2), Y = (2.0, 6.0))
 
 ````
 """
@@ -548,6 +550,7 @@ of the keys as `ext`. This can hold `Real` or `Tuple{Real,Real}` values for
 each named dimension.
 
 ## Examples
+
 ```jldoctest
 julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
