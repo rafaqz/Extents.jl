@@ -57,9 +57,11 @@ end
     a = E(X=(0.1, 0.5), Y=(1.0, 2.0))
     b = E(X=(2.1, 2.5), Y=(3.0, 4.0), Z=(0.0, 1.0))
     c = E(Z=(0.2, 2.0))
+    n = E(X=(NaN, 0.9), Y=(1.0, NaN))
     @test Extents.union(a, b) == Extents.union(a, b, a) == E(X=(0.1, 2.5), Y=(1.0, 4.0))
     @test Extents.union(a, b; strict=true) === nothing
     @test Extents.union(a, c) === nothing
+    @test Extents.union(a, n) === E(X=(0.1, 0.9), Y=(1.0, 2.0))
 
     # If either argument is nothing, return the other
     @test Extents.union(a, nothing) === a
@@ -279,6 +281,7 @@ end
     c = E(X=(0.4, 2.5), Y=(1.5, 4.0), Z=(0.0, 1.0))
     d = E(X=(0.2, 0.45))
     e = E(A=(0.0, 1.0))
+    n = E(X=(NaN, 0.9), Y=(1.0, NaN))
     # a and b don't intersect
     @test Extents.intersects(a, b) == false
     @test Extents.intersects(b, a) == false
@@ -306,6 +309,7 @@ end
     # Objects that have extents can be used
     @test Extents.intersects(HasExtent(), Extents.extent(HasExtent())) == true
     @test Extents.intersects(Extents.extent(HasExtent()), HasExtent()) == true
+    @test Extents.intersects(a, n) == false
     
     # a and b are disjoint
     @test Extents.disjoint(a, b) == true
@@ -334,6 +338,7 @@ end
     # Objects that have extents can be used
     @test Extents.disjoint(HasExtent(), Extent(X=(2, 3), Y=(4, 5))) == true
     @test Extents.disjoint(Extent(X=(2, 3), Y=(4, 5)), HasExtent()) == true
+    @test Extents.disjoint(a, n) == true
 
     # a and b do not intersect
     @test Extents.intersection(a, b) === nothing
@@ -348,6 +353,8 @@ end
     # Unless strict is true
     @test Extents.intersection(a, c; strict=true) === nothing
     @test Extents.intersection(c, a; strict=true) === nothing
+    # NaN returns nothing
+    @test Extents.intersection(a, n) == nothing
 
     # a and d intersect on X
     @test Extents.intersection(a, d) == Extents.intersection(d, a) == Extent(X=(0.2, 0.45))
