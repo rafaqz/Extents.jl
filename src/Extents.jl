@@ -71,7 +71,9 @@ struct Extent{K,V}
     end
 end
 Extent(; kw...) = Extent(values(kw))
-Extent{K}(vals::V) where {K,V} = Extent{K,V}(NamedTuple{K,V}(vals))
+# Allow vectors or tuples
+Extent{K}(vals) where {K} = Extent{K}(NamedTuple{K}(vals))
+# Subset K2 to K1
 Extent{K1}(vals::NamedTuple{K2,V}) where {K1,K2,V} = Extent(NamedTuple{K1}(vals))
 Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
 
@@ -101,6 +103,7 @@ Base.keys(ext::Extent) = keys(bounds(ext))
 Base.values(ext::Extent) = values(bounds(ext))
 Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
+Base.map(f, ext::Extent) = Extent(map(f, bounds(ext)))
 
 function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
     _check_keys_match(a, b) || return false
@@ -128,7 +131,7 @@ function Base.:(==)(a::Extent{K1}, b::Extent{K2}) where {K1,K2}
     return all(values_match)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", extent::Extent)
+function Base.show(io::IO, extent::Extent)
     print(io, "Extent")
     show(io, bounds(extent))
 end
@@ -210,9 +213,11 @@ intersection(a, b, c, args...; kw...) = intersection(intersection(a, b), c, args
 buffer `Extent` by corresponding name-pair values supplied in `buff` NamedTuple.
 
 # Examples
+
 ```julia-repl
 julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+
 julia> ext_buffered = Extents.buffer(ext, (X=1, Y=3))
 Extent(X = (0.0, 3.0), Y = (0.0, 7.0))
 ```
@@ -228,6 +233,54 @@ function buffer(ext::Extent{K}, buff::NamedTuple) where {K}
     Extent{K}(bounds)
 end
 buffer(ext::Nothing, buff) = nothing
+
+"""
+    grow(ext::Extent, x)
+    grow(ext::Extent; kw...)
+
+Grow the bounds of the extent by `x`, as a fraction of the current size of the extent.
+
+If `x` is a `Tuple` the lower and upper bounds are grow by those amounts.
+
+Keyword arguments or a `NamedTuple` also be passed, with the same or a subset 
+of the keys as `ext`. This can hold `Real` or `Tuple{Real,Real}` values for 
+each named dimension.
+
+## Examples
+
+```jldoctest
+julia> ext = Extent(X = (1.0, 1.8), Y = (3.0, 5.0))
+Extent(X = (1.0, 1.8), Y = (3.0, 5.0))
+
+julia> Extents.grow(ext, 0.5) 
+Extent(X = (0.6, 2.2), Y = (2.0, 6.0))
+
+````
+"""
+function grow(ext::Extent, x::Union{Real,Tuple{<:Real,<:Real}})
+    map(ext) do bs
+        _grow(bs, x)
+    end
+end
+function grow(ext::Extent{K1}, xs::NamedTuple{K2}) where {K1,K2}
+    map(K1) do k
+        if k in K2
+            _grow(ext[k], xs[k])
+        else
+            ext[k]
+        end
+    end |> Extent{K1}
+end
+grow(ext::Extent; kw...) = grow(ext, NamedTuple(kw))
+
+function _grow(bs, x::Real)
+    amount = (bs[2] - bs[1]) * x
+    (bs[1] - amount, bs[2] + amount)
+end
+function _grow(bs, x::Tuple{Real,Real})
+    range = (bs[2] - bs[1]) 
+    (bs[1] - x * grow[1], bs[2] + range * x[2])
+end
 
 # DE_9IM predicates
 

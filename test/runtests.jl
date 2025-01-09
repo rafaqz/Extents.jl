@@ -371,3 +371,9 @@ end
     @test Extents.buffer(b, (Lat=2, Lon=1)) == Extent(Lat=(-1.9, 2.5), Lon=(0.0, 3.0), Elev=(-3, 4))
     @test Extents.buffer(c, (X=2, Y=2, Ti=Year(1))) == Extent(X=(-1.9, 2.5), Y=(-1.0, 4.0), Ti=(DateTime("1999-01-01T00:00:00"), DateTime("2021-01-01T00:00:00")))
 end
+
+@testset "grow" begin
+    a = Extent(X=(1.0, 2.0), Y=(4.0, 8.0))
+    @test Extents.grow(a, 0.5) == Extent(X=(0.5, 2.5), Y=(2.0, 10.0))
+    @test Extents.grow(a, (X=0.1, Y=0.5)) == Extent(X=(0.9, 2.1), Y=(2.0, 10.0))
+end
