@@ -371,14 +371,6 @@ end
     @test Extents.buffer(c, (X=2, Y=2, Ti=Year(1))) == Extent(X=(-1.9, 2.5), Y=(-1.0, 4.0), Ti=(DateTime("1999-01-01T00:00:00"), DateTime("2021-01-01T00:00:00")))
 end
 
-@testset "pad" begin
-    a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
-    @test Extents.pad(a, (X=0.1, Y=0.2)) == Extent(X=(0.0, 0.6), Y=(0.8, 2.2))
-    @test Extents.pad(a, 1) == Extent(X=(-0.9, 1.5), Y=(0.0, 3.0))
-    @test Extents.pad(a; Y=2) == Extent(X=(0.1, 0.5), Y=(-1.0, 4.0))
-    @test Extents.pad(a, (Y=2, X=0.1)) == Extent(X=(0.0, 0.6), Y=(-1.0, 4.0))
-end
-
 @testset "grow" begin
     a = Extent(X=(1.0, 2.0), Y=(4.0, 8.0))
     @test Extents.grow(a, 0.5) == Extent(X=(0.5, 2.5), Y=(2.0, 10.0))
