@@ -537,3 +537,5 @@ _skipnothing() = ()
 
 _hasinterior(ex::Extent) = all(map(_hasinterior, bounds(ex)))
 _hasinterior((min, max)::Tuple) = min != max
+
+end
