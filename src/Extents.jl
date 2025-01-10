@@ -8,32 +8,42 @@ const ORDER_DOC = """
 The order of dimensions is ignored in all cases.
 """
 
-abstract type AbstractBounds{T} end
+abstract type AbstractBounds{L,U,T} end
+
+const CC = AbstractBounds{:closed,:closed}
+const CO = AbstractBounds{:closed,:open}
+const OC = AbstractBounds{:open,:closed}
+const OO = AbstractBounds{:open,:open}
+
+(::Type{T})(bounds::Tuple{<:Any,<:Any}) where {T<:AbstractBounds{L,U}} where {L,U} = 
+    T(bounds; kw...)
 
 Base.getindex(b::AbstractBounds, i) = b.bounds[i]
 Base.first(b::AbstractBounds) = b[1]
 Base.last(b::AbstractBounds) = b[2]
 Base.iterate(b::AbstractBounds, args...) = iterate(b.bounds, args...)
 
-struct Bounds{T,C} <: AbstractBounds{T}
+struct Bounds{L,U,T} <: AbstractBounds{L,U,T}
     bounds::Tuple{T,T}
-    crs::C
+    Bounds{L,U}(bounds::Tuple{T,T}) where {L,U,T} = new{L,U,T}(bounds)
 end
-Bounds(bounds::Tuple{<:Any,<:Any}; crs=nothing) = Bounds(bounds, crs)
-Bounds(a, b; kw...) = Bounds(promote(a, b); kw...)
+Bounds{L,U}(a, b) where {L,U} = Bounds{L,U}((a, b))
+Bounds{L,U}((a, b)::Tuple) where {L,U} = Bounds{L,U}(promote(a, b))
 
 Base.show(io::IO, bs::Bounds) = 
     print(io, "$(typeof(bs).name.wrapper)($(bs[1]), $(bs[2]))")
 
-struct Cyclic{T,C} <: AbstractBounds{T}
+struct CyclicBounds{L,U,T,C} <: AbstractBounds{L,U,T}
     bounds::Tuple{T,T}
     cycle::Tuple{T,T}
-    crs::C
+    CyclicBounds{L,U}(bounds::Tuple{T,T}, cycle::Tuple{T,T}) where {L,U,T,C} = 
+        new{L,U,T,C}(bounds, cycle)
 end
-Cyclic(a, b; kw...) = Cyclic(promote(a, b); kw...)
-Cyclic(bounds::Tuple{<:Any,<:Any}; cycle, crs=nothing) = Cyclic(bounds, cycle, crs)
+CyclicBounds{L,U}(a, b; kw...) where {L,U} = CyclicBounds{L,U}((a, b); kw...)
+CyclicBounds{L,U}((a, b)::Tuple{<:Any,<:Any}; cycle) where {L,U} = 
+    CyclicBounds{L,U}(promote(a, b), cycle)
 
-Base.show(io::IO, bs::Cyclic) = 
+Base.show(io::IO, bs::CyclicBounds) = 
     print(io, "$(typeof(bs).name.wrapper)($(bs[1]), $(bs[2]); cycle=$(bs.cycle))")
 
 """
@@ -357,6 +367,7 @@ intersects(a::Extent, b::Extent; strict=false) = _do_bounds(all, _intersect, a, 
 _intersect((min_a, max_a), (min_b, max_b)) = 
     (min_a <= min_b && max_a >= min_b) || (min_b <= min_a && max_b >= min_a)
 
+
 """
     disjoint(a::Extent, b::Extent; strict=false)
 
@@ -400,8 +411,17 @@ function touches(a::Extent, b::Extent; strict=false)
     end
 end
 
-_touch((min_a, max_a), (min_b, max_b)) = (min_a == max_b || max_a == min_b)
-
+_touch((min_a, max_a)::T,  (min_b, max_b)::T ) where T = (min_a == max_b || max_a == min_b)
+_touch((min_a, max_a)::CC, (min_b, max_b)::CO) = max_a == min_b 
+_touch((min_a, max_a)::OO, (min_b, max_b)::OC) = min_a == max_b
+_touch((min_a, max_a)::CC, (min_b, max_b)::OC) = min_a == max_b
+_touch((min_a, max_a)::OO, (min_b, max_b)::CO) = max_a == min_b
+_touch((min_a, max_a)::CO, (min_b, max_b)::CC) = min_a == max_b
+_touch((min_a, max_a)::OC, (min_b, max_b)::OO) = min_a == max_b
+_touch((min_a, max_a)::OC, (min_b, max_b)::CC) = max_a == min_b
+_touch((min_a, max_a)::CO, (min_b, max_b)::OO) = max_a == min_b
+_touch((min_a, max_a)::CO, (min_b, max_b)::OC) = false
+_touch((min_a, max_a)::OC, (min_b, max_b)::CO) = false
 
 """
     covers(a::Extent, b::Extent; strict=false)
@@ -421,7 +441,9 @@ $DE_9IM_DOC
 """
 covers(a::Extent, b::Extent; strict=false) = _do_bounds(all, _cover, a, b, strict)
 
-_cover((min_a, max_a), (min_b, max_b)) = (min_a <= min_b && max_a >= max_b)
+_cover((min_a, max_a)::AbstractBounds{T,T}, (min_b, max_b)::AbstractBounds{T,T}) where {T} =
+    (min_a <= min_b && max_a >= max_b)
+_cover((min_a, max_a)::CO, (min_b, max_b)) = (min_a <= min_b && max_a >= max_b)
 
 """
     coveredby(a::Extent, b::Extent; strict=false)
@@ -483,8 +505,10 @@ $ORDER_DOC
 $DE_9IM_DOC 
 """
 equals(a::Extent, b::Extent; strict=false) = _do_bounds(all, _equal, a, b, strict)
+equals(a::Extent{L,U}, b::Extent{L,U}; strict=false) where {L,U} = _do_bounds(all, _equal, a, b, strict)
 
-_equal(a, b) = a == b
+_equal(a::AbstractBounds{L,U}, b::AbstractBounds{L,U}) where {L,U} = a == b
+_equal(a, b) = false
 
 # Handle `nothing` bounds for all methods
 for f in (:_intersect, :_cover, :_contain, :_touch, :_equal)
