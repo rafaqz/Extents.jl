@@ -30,6 +30,11 @@ end
     @test extent(ex1) === ex1
 end
 
+@testset "extent can be called on empty Tuple or NamedTuple, retruning empty Extent" begin
+    @test extent(()) === Extent(()) === Extent((;))
+    @test extent((;)) === Extent((;))
+end
+
 @testset "Base julia equality works in any order for the same dimensions" begin
     # Extents equal themselves
     @test ex1 == ex1

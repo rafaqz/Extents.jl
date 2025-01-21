@@ -48,6 +48,9 @@ Extent{K}(vals) where {K} = Extent{K}(NamedTuple{K}(vals))
 # Subset K2 to K1
 Extent{K1}(vals::NamedTuple{K2,V}) where {K1,K2,V} = Extent(NamedTuple{K1}(vals))
 Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
+# Fallback empty Extent on an empty tuple. Other packages like 
+# DimensionalData need this but cant implement it without type piracy
+Extent(::Tuple{}) = Extent((;))
 
 bounds(ext::Extent) = getfield(ext, :bounds)
 
@@ -104,6 +107,7 @@ function Base.show(io::IO, extent::Extent)
     print(io, "Extent")
     show(io, bounds(extent))
 end
+Base.show(io::IO, extent::Extent{()}) = print(io, "Extent()")
 
 """
     extent(x)
@@ -114,6 +118,9 @@ function extent end
 
 extent(extent) = nothing
 extent(extent::Extent) = extent
+# Handle empty cases other packages cant dispatch on
+extent(extent::Tuple{}) = Extent(())
+extent(extent::NamedTuple{(),Tuple{}}) = Extent((;))
 
 """
     union(ext1::Extent, ext2::Extent; strict=false)
