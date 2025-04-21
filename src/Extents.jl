@@ -73,6 +73,7 @@ Base.values(ext::Extent) = values(bounds(ext))
 Base.length(ext::Extent) = length(bounds(ext))
 Base.iterate(ext::Extent, args...) = iterate(bounds(ext), args...)
 Base.map(f, ext::Extent) = Extent(map(f, bounds(ext)))
+Base.NamedTuple(ext::Extent) = bounds(ext)
 
 function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
     _check_keys_match(a, b) || return false
