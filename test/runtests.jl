@@ -25,6 +25,11 @@ end
     @test bounds(ex2) === (Y=(3, 4), X=(1, 2))
     @test bounds(ex3) === (X=(1, 2), Y=(3, 4), Z=(5.0, 6.0))
 end
+@testset "NamedTuple" begin
+    @test NamedTuple(ex1) === (X=(1, 2), Y=(3, 4))
+    @test NamedTuple(ex2) === (Y=(3, 4), X=(1, 2))
+    @test NamedTuple(ex3) === (X=(1, 2), Y=(3, 4), Z=(5.0, 6.0))
+end
 
 @testset "extent can be called on Extent, returning itself" begin
     @test extent(ex1) === ex1
