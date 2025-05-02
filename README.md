@@ -14,49 +14,98 @@ and [Rasters.jl](https://github.com/rafaqz/Rasters.jl) to subset arrays with nam
 
 # Quick start
 
-```julia-repl
-julia> using Extents
+Install the package:
+```julia
+]
+add Extents
+```
 
-julia> ext1 = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+Then to use it:
+```julia
+using Extents
+```
 
-julia> ext2 = Extent(X = (1.5, 2.5), Y = (3.0, 4.0))
+Load create Extents:
+```julia
+extent1 = Extent(X = (1.0, 2.0), Y = (3.0, 4.0));
+extent2 = Extent(X = (1.5, 2.5), Y = (3.0, 4.0));
+extent3 = Extent(X = (-1.0, 5.0), Y = (2.0, 5.0));
+```
 
-julia> # find the dimensions
-
-julia> keys(ext1)
+Find dimensions:
+```julia
+keys(extent1)
+```
+```
 (:X, :Y)
+```
 
-julia> # get the extent for a single dimension by name
-
-julia> ext1.X
+Get extent for a single dimension by name:
+```julia
+extent1.X
+```
+```julia
 (1.0, 2.0)
+```
 
-julia> # get the underlying NamedTuple
-
-julia> bounds(ext1)
+Get underlying NamedTuple:
+```julia
+bounds(extent1)
+```
+```julia
 (X = (1.0, 2.0), Y = (3.0, 4.0))
+```
 
-julia> Extents.intersection(ext1, ext2)
+Get intersection of two extents:
+```julia
+Extents.intersection(extent1, extent2)
+```
+```julia
 Extent(X = (1.5, 2.0), Y = (3.0, 4.0))
+```
 
-julia> Extents.union(ext1, ext2)
+Get union of two extents:
+```julia
+Extents.union(extent1, extent2)
+```
+```julia
 Extent(X = (1.0, 2.5), Y = (3.0, 4.0))
 ```
 
-Extents.jl also defines spatial predicates following the 
-[DE-9IM](https://en.wikipedia.org/wiki/DE-9IM) standard.
+Use reduce() to operate over collections:
+```julia
+extents = [extent1, extent2, extent3]
+```
+```julia
+3-element Vector{Extent{(:X, :Y), Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}}}:
+ Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+ Extent(X = (1.5, 2.5), Y = (3.0, 4.0))
+ Extent(X = (-1.0, 5.0), Y = (2.0, 5.0))
+```
+```julia
+reduce(Extents.intersection, extents)
+```
+```julia
+Extent(X = (1.5, 2.0), Y = (3.0, 4.0))
+```
+```julia
+reduce(Extents.union, extents)
+Extent(X = (-1.0, 5.0), Y = (2.0, 5.0))
+```
 
-```julia-repl
-julia> Extents.intersects(ext1, ext2)
+Extents.jl also defines spatial predicates following the [DE-9IM](https://en.wikipedia.org/wiki/DE-9IM) standard.
+
+```julia
+Extents.intersects(extent1, extent2)
 true
 
-julia> Extents.disjoint(ext1, ext2)
+Extents.disjoint(extent1, extent2)
 false
 
-julia> Extents.touches(ext1, ext2)
+Extents.touches(extent1, extent2)
 false
 
-julia> Extents.overlaps(ext1, ext2)
+Extents.overlaps(extent1, extent2)
 true
 ```
 
