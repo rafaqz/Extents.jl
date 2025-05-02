@@ -17,46 +17,61 @@ and [Rasters.jl](https://github.com/rafaqz/Rasters.jl) to subset arrays with nam
 ```julia-repl
 julia> using Extents
 
-julia> ext1 = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+julia> extent1 = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 
-julia> ext2 = Extent(X = (1.5, 2.5), Y = (3.0, 4.0))
+julia> extent2 = Extent(X = (1.5, 2.5), Y = (3.0, 4.0))
+
+julia> extent3 = Extent(X = (-1.0, 5.0), Y = (2.0, 5.0))
 
 julia> # find the dimensions
 
-julia> keys(ext1)
+julia> keys(extent1)
 (:X, :Y)
 
 julia> # get the extent for a single dimension by name
 
-julia> ext1.X
+julia> extent1.X
 (1.0, 2.0)
 
 julia> # get the underlying NamedTuple
 
-julia> bounds(ext1)
+julia> bounds(extent1)
 (X = (1.0, 2.0), Y = (3.0, 4.0))
 
-julia> Extents.intersection(ext1, ext2)
+julia> Extents.intersection(extent1, extent2)
 Extent(X = (1.5, 2.0), Y = (3.0, 4.0))
 
-julia> Extents.union(ext1, ext2)
+julia> Extents.union(extent1, extent2)
 Extent(X = (1.0, 2.5), Y = (3.0, 4.0))
+
+julia> # use reduce() to operate over collections
+
+julia> extents = [extent1, extent2, extent3]
+3-element Vector{Extent{(:X, :Y), Tuple{Tuple{Float64, Float64}, Tuple{Float64, Float64}}}}:
+ Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
+ Extent(X = (1.5, 2.5), Y = (3.0, 4.0))
+ Extent(X = (-1.0, 5.0), Y = (2.0, 5.0))
+
+julia> reduce(Extents.intersection, extents)
+Extent(X = (1.5, 2.0), Y = (3.0, 4.0))
+
+julia> reduce(Extents.union, extents)
+Extent(X = (-1.0, 5.0), Y = (2.0, 5.0))
 ```
 
-Extents.jl also defines spatial predicates following the 
-[DE-9IM](https://en.wikipedia.org/wiki/DE-9IM) standard.
+Extents.jl also defines spatial predicates following the [DE-9IM](https://en.wikipedia.org/wiki/DE-9IM) standard.
 
 ```julia-repl
-julia> Extents.intersects(ext1, ext2)
+julia> Extents.intersects(extent1, extent2)
 true
 
-julia> Extents.disjoint(ext1, ext2)
+julia> Extents.disjoint(extent1, extent2)
 false
 
-julia> Extents.touches(ext1, ext2)
+julia> Extents.touches(extent1, extent2)
 false
 
-julia> Extents.overlaps(ext1, ext2)
+julia> Extents.overlaps(extent1, extent2)
 true
 ```
 
