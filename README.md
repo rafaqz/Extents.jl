@@ -25,7 +25,7 @@ Then to use it:
 using Extents
 ```
 
-Load create Extents:
+Create Extents:
 ```julia
 extent1 = Extent(X = (1.0, 2.0), Y = (3.0, 4.0));
 extent2 = Extent(X = (1.5, 2.5), Y = (3.0, 4.0));
