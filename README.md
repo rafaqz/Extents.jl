@@ -84,8 +84,6 @@ extents = [extent1, extent2, extent3]
 ```
 ```julia
 reduce(Extents.intersection, extents)
-```
-```julia
 Extent(X = (1.5, 2.0), Y = (3.0, 4.0))
 ```
 ```julia
