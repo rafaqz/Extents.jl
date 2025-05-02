@@ -96,13 +96,16 @@ Extents.jl also defines spatial predicates following the [DE-9IM](https://en.wik
 ```julia
 Extents.intersects(extent1, extent2)
 true
-
+```
+```julia
 Extents.disjoint(extent1, extent2)
 false
-
+```
+```julia
 Extents.touches(extent1, extent2)
 false
-
+```
+```julia
 Extents.overlaps(extent1, extent2)
 true
 ```
