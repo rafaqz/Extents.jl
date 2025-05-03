@@ -1,5 +1,13 @@
 module Extents
 
+struct Fix2kw{F,B,KW}
+    f::F
+    b::B
+    kw::KW
+end
+Fix2kw(f, b; kw...) = Fix2kw{typeof(b),typeof(kw)}(b, kw)
+(f2::Fix2kw)(a; kw...) = f2.f(a, f2.b; f2.kw..., kw...)
+
 export Extent, extent, bounds
 
 ## DO NOT export anything else ##
@@ -439,7 +447,7 @@ function overlaps(a::Extent, b::Extent; strict=false)
 end
 
 """
-    equals(a::Extent, b::Extent; strict=false)
+    equals(a, b; strict=false)
 
 `a` and `b` are topologically equal: their interiors intersect and no part
 of the interior or boundary of one intersects the exterior of the other.
@@ -472,6 +480,12 @@ for f in (:intersects, :covers, :contains, :touches, :equals, :overlaps)
         $f(a::Extent, b::Nothing; kw...) = false
         $f(a::Nothing, b::Extent; kw...) = false
         $f(a::Nothing, b::Nothing; kw...) = false
+    end
+end
+
+for f in (:intersects, :disjoint, :covers, :coveredby, :contains, :within, :touches, :equals, :overlaps)
+    @eval begin 
+        $f(b; kw...) = Fix2kw($f, extent(b), kw)
     end
 end
 
@@ -515,6 +529,7 @@ _unwrap(::Val{X}) where {X} = X
 function _do_bounds(boolreduce::Function, compare::Function, a::Extent, b::Extent, strict::Bool)
     _maybe_check_keys_match(a, b, strict) || return false
     keys = _shared_keys(a, b)
+    @show keys
     if length(keys) == 0
         # There are no shared dimensions. Maybe this should return `nothing`?
         # But we need to handle it otherwise `all` returns `true` for empty tuples
