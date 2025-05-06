@@ -124,21 +124,26 @@ for all dimensions.
 
 $ORDER_DOC
 """
+union(ext1::Extent{()}, ext2::Extent{()}; strict=false) = Extent()
 function union(ext1::Extent, ext2::Extent; strict=false)
     _maybe_check_keys_match(ext1, ext2, strict) || return nothing
-    keys = _shared_keys(ext1, ext2)
-    if length(keys) == 0
-        return nothing
-    else
-        values = map(keys) do k
-            k = _unwrap(k)
-            k_exts = (ext1[k], ext2[k])
-            a = min(map(first, k_exts)...)
-            b = max(map(last, k_exts)...)
-            (a, b)
+    keys = _all_keys(ext1, ext2)
+    values = map(keys) do k
+        k = _unwrap(k)
+        if haskey(ext1, k)
+            if haskey(ext2, k)
+                k_exts = (ext1[k], ext2[k])
+                a = min(map(first, k_exts)...)
+                b = max(map(last, k_exts)...)
+                (a, b)
+            else
+                ext1[k]
+            end
+        else
+            ext2[k]
         end
-        return Extent{map(_unwrap, keys)}(values)
     end
+    return Extent{map(_unwrap, keys)}(values)
 end
 union(a::Extent, ::Nothing; strict=false) = strict ? nothing : a
 union(::Nothing, b::Extent; strict=false) = strict ? nothing : b
@@ -501,6 +506,12 @@ function _shared_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
     reduce(K1; init=()) do acc, k
         k in K2 ? (acc..., Val{k}()) : acc
     end
+end
+# Use NamedTuple merge for combining keys
+function _all_keys(ext1::Extent{K1}, ext2::Extent{K2}) where {K1,K2}
+    ntk1 = NamedTuple{K1}(map(k -> Val{k}(), K1)) 
+    ntk2 = NamedTuple{K2}(map(k -> Val{k}(), K2))
+    return values(merge(ntk1, ntk2))
 end
 
 @noinline _ext_no_key(key) = throw(ErrorException("Extent has no field $key"))

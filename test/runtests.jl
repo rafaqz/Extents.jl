@@ -62,9 +62,10 @@ end
     a = E(X=(0.1, 0.5), Y=(1.0, 2.0))
     b = E(X=(2.1, 2.5), Y=(3.0, 4.0), Z=(0.0, 1.0))
     c = E(Z=(0.2, 2.0))
-    @test Extents.union(a, b) == Extents.union(a, b, a) == E(X=(0.1, 2.5), Y=(1.0, 4.0))
+    @test Extents.union(a, b) == Extents.union(a, b, a) == E(X=(0.1, 2.5), Y=(1.0, 4.0), Z=(0.0, 1.0))
     @test Extents.union(a, b; strict=true) === nothing
-    @test Extents.union(a, c) === nothing
+    @test Extents.union(a, c) == E(X=(0.1, 0.5), Y=(1.0, 2.0), Z=(0.2, 2.0))
+    @test Extents.union(a, b) == E(X=(0.1, 2.5), Y=(1.0, 4.0), Z=(0.0, 1.0))
 
     # If either argument is nothing, return the other
     @test Extents.union(a, nothing) === a
@@ -74,7 +75,7 @@ end
     # If both arguments are nothing, return nothing
     @test Extents.union(nothing, nothing) === nothing
     @test Extents.union(nothing, nothing; strict=true) === nothing
-end
+# end
 
 @testset "covers" begin
     # An extent contains itself
