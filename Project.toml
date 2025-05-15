@@ -1,7 +1,7 @@
 name = "Extents"
 uuid = "411431e0-e8b7-467b-b5e0-f676ba4f2910"
 authors = ["Rafael Schouten <rafaelschouten@gmail.com>"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 
