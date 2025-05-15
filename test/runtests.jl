@@ -381,3 +381,23 @@ end
     @test Extents.grow(a, 0.5) == Extent(X=(0.5, 2.5), Y=(2.0, 10.0))
     @test Extents.grow(a, (X=0.1, Y=0.5)) == Extent(X=(0.9, 2.1), Y=(2.0, 10.0))
 end
+
+@testset "Single argument predicates" begin
+    a = Extent(X=(0.1, 0.5), Y=(1.0, 2.0))
+    b = Extent(X=(0.2, 0.4), Y=(2.0, 5.0), Z=(1, 2))
+    @test Extents.intersects(b)(a) == Extents.intersects(a, b) == true
+    @test Extents.disjoint(b)(a) == Extents.disjoint(a, b) == false
+    @test Extents.touches(b)(a) == Extents.touches(a, b) == true
+    @test Extents.equals(b)(a) == Extents.equals(a, b) == false
+    @test Extents.covers(b)(a) == Extents.covers(a, b) == false
+    @test Extents.coveredby(b)(a) == Extents.coveredby(a, b) == false
+    @test Extents.contains(b)(a) == Extents.contains(a, b) == false
+    @test Extents.within(b)(a) == Extents.within(a, b) == false
+    @test Extents.touches(b)(a) == Extents.touches(a, b) == true
+
+    @testset "strict keyword still works" begin
+        @test Extents.intersects(b; strict=true)(a) == 
+            Extents.intersects(b)(a; strict=true) ==
+            Extents.intersects(a, b; strict=true) == false
+    end
+end

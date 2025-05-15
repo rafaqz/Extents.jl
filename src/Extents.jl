@@ -1,5 +1,13 @@
 module Extents
 
+struct Fix2kw{F,B,KW}
+    f::F
+    b::B
+    kw::KW
+end
+Fix2kw(f, b; kw...) = Fix2kw{typeof(b),typeof(kw)}(b, kw)
+(f2::Fix2kw)(a; kw...) = f2.f(a, f2.b; f2.kw..., kw...)
+
 export Extent, extent, bounds
 
 ## DO NOT export anything else ##
@@ -265,10 +273,11 @@ https://en.wikipedia.org/wiki/DE-9IM
 """
 
 """
-    contains(a::Extent, b::Extent; strict=false)
+    contains(a, b; strict=false)
+    contains(b; strict=false)(a)
 
-`a` contains `b` if no points of `b` lie in the exterior of `a`, and 
-at least one point of the interior of `b` lies in the interior of `a`.
+Extent `a` contains extent `b` if no points of `b` lie in the exterior of `a`, 
+and at least one point of the interior of `b` lies in the interior of `a`.
 If `b` has no interior points it is not contained in `a`.
 
 Identical to [`within`](@ref) with argument order reversed.
@@ -287,10 +296,11 @@ contains(a::Extent, b::Extent; strict=false) = _do_bounds(all, _contain, a, b, s
 _contain(a::Tuple, b::Tuple) = _cover(a, b) && _hasinterior(b)
 
 """
-    within(a::Extent, b::Extent; strict=false)
+    within(a, b; strict=false)
+    within(b; strict=false)(a)
 
-`a` is within `b` if no points of `a` lie in the exterior of `b`, and 
-at least one point of the interior of `a` lies in the interior of `b`.
+Extent `a` is within extent `b` if no points of `a` lie in the exterior of `b`, 
+and at least one point of the interior of `a` lies in the interior of `b`.
 If `a` has no interior points it is not contained in `b`.
 
 Identical to [`contains`](@ref) with argument order reversed.
@@ -306,7 +316,8 @@ $DE_9IM_DOC
 within(a, b; kw...) = contains(b, a; kw...) # swapped order of `contains`
 
 """
-    intersects(a::Extent, b::Extent; strict=false)
+    intersects(a, b; strict=false)
+    intersects(b; strict=false)(a)
 
 `a` intersects `b` if `a` and `b` have at least one point in common
 (the inverse of [`disjoint`](@ref)).
@@ -328,9 +339,10 @@ _intersect((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) =
     (min_a <= min_b && max_a >= min_b) || (min_b <= min_a && max_b >= min_a)
 
 """
-    disjoint(a::Extent, b::Extent; strict=false)
+    disjoint(a, b; strict=false)
+    disjoint(b; strict=false)(a)
 
-`a` and `b` are disjoint if they have no point in common
+Extents `a` and `b` are disjoint if they have no point in common
 (the inverse of [`intersects`](@ref)).
 
 Returns `false` if the extents of all common dimensions share some values,
@@ -347,9 +359,10 @@ $DE_9IM_DOC
 disjoint(a, b; kw...) = !intersects(a, b; kw...)
 
 """
-    touches(a::Extent, b::Extent; strict=false)
+    touches(a, b; strict=false)
+    touches(b; strict=false)(a)
 
-`a` and `b` have at least one point in common, but their interiors do not intersect. 
+Extents `a` and `b` have at least one point in common, but their interiors do not intersect. 
 
 Returns `true` if the extents of any common dimensions share boundaries.
 
@@ -374,9 +387,12 @@ _touch((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a == max_b || max_a 
 
 
 """
-    covers(a::Extent, b::Extent; strict=false)
+    covers(a, b; strict=false)
+    covers(b; strict=false)(a)
 
-At least one point of `b` lies in `a`, and no point of `b` lies in the exterior of `a`,
+At least one point of extent `b` lies in extent `a`, 
+and no point of `b` lies in the exterior of `a`.
+
 Every point of `b` is a point in the interior or boundary of `a`. 
 
 Identical to [`coveredby`](@ref) with argument order reversed.
@@ -394,9 +410,12 @@ covers(a::Extent, b::Extent; strict=false) = _do_bounds(all, _cover, a, b, stric
 _cover((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a <= min_b && max_a >= max_b)
 
 """
-    coveredby(a::Extent, b::Extent; strict=false)
+    coveredby(a, b; strict=false)
+    coveredby(b; strict=false)(a)
 
-At least one point of `a` lies in `b`, and no point of `a` lies in the exterior of `b`,
+At least one point of extent `a` lies in extent `b`, 
+and no point of `a` lies in the exterior of `b`.
+
 Every point of `a` is a point in the interior or boundary of `b`. 
 
 Identical to [`covers`](@ref) with argument order reversed.
@@ -413,9 +432,10 @@ coveredby(a, b; kw...) = covers(b, a; kw...) # swapped order of `covers`
 
 
 """
-    overlaps(a::Extent, b::Extent; strict=false)
+    overlaps(a, b; strict=false)
+    overlaps(b; strict=false)(a)
 
-`a` overlaps `b`: they have some but not all points in common, 
+Extent `a` overlaps extent `b`: they have some but not all points in common, 
 they have the same dimension, and the intersection of the interiors
 of the two geometries has the same dimension as the geometries themselves.
 
@@ -439,10 +459,11 @@ function overlaps(a::Extent, b::Extent; strict=false)
 end
 
 """
-    equals(a::Extent, b::Extent; strict=false)
+    equals(a, b; strict=false)
+    equals(b; strict=false)(a)
 
-`a` and `b` are topologically equal: their interiors intersect and no part
-of the interior or boundary of one intersects the exterior of the other.
+Extents `a` and `b` are topologically equal: their interiors intersect and no 
+part of the interior or boundary of one intersects the exterior of the other.
 
 $STRICT_DOC
 
@@ -472,6 +493,12 @@ for f in (:intersects, :covers, :contains, :touches, :equals, :overlaps)
         $f(a::Extent, b::Nothing; kw...) = false
         $f(a::Nothing, b::Extent; kw...) = false
         $f(a::Nothing, b::Nothing; kw...) = false
+    end
+end
+
+for f in (:intersects, :disjoint, :covers, :coveredby, :contains, :within, :touches, :equals, :overlaps)
+    @eval begin 
+        $f(b; kw...) = Fix2kw($f, extent(b), kw)
     end
 end
 
