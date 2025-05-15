@@ -542,7 +542,6 @@ _unwrap(::Val{X}) where {X} = X
 function _do_bounds(boolreduce::Function, compare::Function, a::Extent, b::Extent, strict::Bool)
     _maybe_check_keys_match(a, b, strict) || return false
     keys = _shared_keys(a, b)
-    @show keys
     if length(keys) == 0
         # There are no shared dimensions. Maybe this should return `nothing`?
         # But we need to handle it otherwise `all` returns `true` for empty tuples
