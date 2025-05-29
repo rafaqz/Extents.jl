@@ -232,8 +232,7 @@ Extent(X = (1.0, 1.8), Y = (3.0, 5.0))
 
 julia> Extents.grow(ext, 0.5) 
 Extent(X = (0.6, 2.2), Y = (2.0, 6.0))
-
-````
+```
 """
 function grow(ext::Extent, x::Union{Real,Tuple{<:Real,<:Real}})
     map(ext) do bs
