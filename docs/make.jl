@@ -1,6 +1,8 @@
 using Extents
 using Documenter
 
+DocMeta.setdocmeta!(Extents, :DocTestSetup, :(using Extents))
+
 makedocs(;
     modules=[Extents],
     authors="Rafael Schouten <rafaelschouten@gmail.com>",

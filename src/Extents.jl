@@ -32,7 +32,7 @@ in the order the dimensions are used in the object.
 dimension.
 
 # Examples
-```julia-repl
+```jldoctest
 julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 
@@ -88,7 +88,7 @@ function Base.isapprox(a::Extent{K1}, b::Extent{K2}; kw...) where {K1,K2}
     values_match = map(K1) do k
         bounds_a = a[k]
         bounds_b = b[k]
-        if isnothing(bounds_a) && isnothing(bounds_b) 
+        if isnothing(bounds_a) && isnothing(bounds_b)
             true
         else
             map(bounds_a, bounds_b) do val_a, val_b
@@ -192,7 +192,7 @@ buffer `Extent` by corresponding name-pair values supplied in `buff` NamedTuple.
 
 # Examples
 
-```julia-repl
+```jldoctest
 julia> ext = Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 Extent(X = (1.0, 2.0), Y = (3.0, 4.0))
 
@@ -220,7 +220,7 @@ Grow the bounds of the extent by `x`, as a fraction of the current size of the e
 
 If `x` is a `Tuple` the lower and upper bounds are grow by those amounts.
 
-Keyword arguments or a `NamedTuple` also be passed, with the same or a subset 
+Keyword arguments or a `NamedTuple` also be passed, with the same or a subset
 of the keys as `ext`. This can hold `Real` or `Tuple{Real,Real}` values for 
 each named dimension.
 
