@@ -268,7 +268,7 @@ When `strict=true`, any unshared dimensions cause the function to return `nothng
 
 const DE_9IM_DOC = """
 Conforms to the DE-9IM spatial predicates standard
-https://en.wikipedia.org/wiki/DE-9IM
+<https://en.wikipedia.org/wiki/DE-9IM>
 """
 
 """
