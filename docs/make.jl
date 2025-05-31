@@ -1,12 +1,13 @@
 using Extents
 using Documenter
+using Documenter.Remotes: GitHub
 
 DocMeta.setdocmeta!(Extents, :DocTestSetup, :(using Extents))
 
 makedocs(;
     modules=[Extents],
     authors="Rafael Schouten <rafaelschouten@gmail.com>",
-    repo="https://github.com/rafaqz/Extents.jl/blob/{commit}{path}#{line}",
+    repo=GitHub("rafaqz/Extents.jl"),
     sitename="Extents.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
