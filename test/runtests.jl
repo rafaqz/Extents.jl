@@ -6,6 +6,7 @@ const E = Extent
 ex1 = Extent(X=(1, 2), Y=(3, 4))
 ex2 = Extent(Y=(3, 4), X=(1, 2))
 ex3 = Extent(X=(1, 2), Y=(3, 4), Z=(5.0, 6.0))
+ex1 = Extent(X=Extents.Bounds(1, 2), Y=(3, 4))
 
 struct HasExtent end
 Extents.extent(::HasExtent) = Extent(X=(0, 1), Y=(0, 1))
@@ -78,7 +79,7 @@ end
 
 @testset "covers" begin
     # An extent contains itself
-    @test Extents.covers(E(X=(2, 3), Y=(3, 4)), E(X=(2, 3), Y=(3, 4))) == true
+    @test Extents.covers(E(X=Extents.Bounds(2, 3), Y=(3, 4)), E(X=(2, 3), Y=(3, 4))) == true
     # A larger extent covers a smaller one inside it
     @test Extents.covers(E(X=(0, 4), Y=(1, 5)), E(X=(2, 3), Y=(3, 4))) == true
     # Intersecting but not covers in one dimension
@@ -108,7 +109,7 @@ end
 
 @testset "coveredby" begin
     # An extent contains itself
-    @test Extents.coveredby(E(X=(2, 3), Y=(3, 4)), E(X=(2, 3), Y=(3, 4))) == true
+    @test Extents.coveredby(E(X=Extents.Bounds(2, 3), Y=(3, 4)), E(X=(2, 3), Y=(3, 4))) == true
     # A larger extent coveredby a smaller one inside it
     @test Extents.contains(E(X=(0, 4), Y=(1, 5)), E(X=(2, 3), Y=(3, 4))) == true
     @test Extents.coveredby(E(X=(2, 3), Y=(3, 4)), E(X=(0, 4), Y=(1, 5))) == true
@@ -139,7 +140,7 @@ end
 
 @testset "contains" begin
     # An extent contains itself
-    @test Extents.contains(E(X=(2, 3), Y=(3, 4)), E(X=(2, 3), Y=(3, 4))) == true
+    @test Extents.contains(E(X=(2, 3), Y=(3, 4)), E(X=(2, 3), Y=Extents.Bounds(3, 4))) == true
     # A larger extent contains a smaller one inside it
     @test Extents.contains(E(X=(0, 4), Y=(1, 5)), E(X=(2, 3), Y=(3, 4))) == true
     # Intersecting but not contains in one dimension
@@ -169,7 +170,7 @@ end
 
 @testset "within" begin
     # An extent contains itself
-    @test Extents.within(E(X=(2, 3), Y=(3, 4)), E(X=(2, 3), Y=(3, 4))) == true
+    @test Extents.within(E(X=(2, 3), Y=(3, 4)), E(X=Extents.Bounds(2, 3), Y=(3, 4))) == true
     # A larger extent within a smaller one inside it
     @test Extents.contains(E(X=(0, 4), Y=(1, 5)), E(X=(2, 3), Y=(3, 4))) == true
     @test Extents.within(E(X=(2, 3), Y=(3, 4)), E(X=(0, 4), Y=(1, 5))) == true
