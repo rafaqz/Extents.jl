@@ -16,6 +16,44 @@ const ORDER_DOC = """
 The order of dimensions is ignored in all cases.
 """
 
+abstract type AbstractBounds{L,U,T} end
+
+const CC = AbstractBounds{:closed,:closed}
+const CO = AbstractBounds{:closed,:open}
+const OC = AbstractBounds{:open,:closed}
+const OO = AbstractBounds{:open,:open}
+
+(::Type{T})(bounds::Tuple{<:Any,<:Any}) where {T<:AbstractBounds{L,U}} where {L,U} = 
+    T(bounds; kw...)
+
+Base.getindex(b::AbstractBounds, i) = b.bounds[i]
+Base.first(b::AbstractBounds) = b[1]
+Base.last(b::AbstractBounds) = b[2]
+Base.iterate(b::AbstractBounds, args...) = iterate(b.bounds, args...)
+
+struct Bounds{L,U,T} <: AbstractBounds{L,U,T}
+    bounds::Tuple{T,T}
+    Bounds{L,U}(bounds::Tuple{T,T}) where {L,U,T} = new{L,U,T}(bounds)
+end
+Bounds{L,U}(a, b) where {L,U} = Bounds{L,U}((a, b))
+Bounds{L,U}((a, b)::Tuple) where {L,U} = Bounds{L,U}(promote(a, b))
+
+Base.show(io::IO, bs::Bounds) = 
+    print(io, "$(typeof(bs).name.wrapper)($(bs[1]), $(bs[2]))")
+
+struct CyclicBounds{L,U,T,C} <: AbstractBounds{L,U,T}
+    bounds::Tuple{T,T}
+    cycle::Tuple{T,T}
+    CyclicBounds{L,U}(bounds::Tuple{T,T}, cycle::Tuple{T,T}) where {L,U,T,C} = 
+        new{L,U,T,C}(bounds, cycle)
+end
+CyclicBounds{L,U}(a, b; kw...) where {L,U} = CyclicBounds{L,U}((a, b); kw...)
+CyclicBounds{L,U}((a, b)::Tuple{<:Any,<:Any}; cycle) where {L,U} = 
+    CyclicBounds{L,U}(promote(a, b), cycle)
+
+Base.show(io::IO, bs::CyclicBounds) = 
+    print(io, "$(typeof(bs).name.wrapper)($(bs[1]), $(bs[2]); cycle=$(bs.cycle))")
+
 """
     Extent
 
@@ -46,7 +84,7 @@ julia> values(ext)
 struct Extent{K,V}
     bounds::NamedTuple{K,V}
     function Extent{K,V}(bounds::NamedTuple{K,V}) where {K,V}
-        bounds = map(b -> promote(b...), bounds)
+        bounds = map(_promote, bounds)
         new{K,typeof(values(bounds))}(bounds)
     end
 end
@@ -56,6 +94,9 @@ Extent{K}(vals) where {K} = Extent{K}(NamedTuple{K}(vals))
 # Subset K2 to K1
 Extent{K1}(vals::NamedTuple{K2,V}) where {K1,K2,V} = Extent(NamedTuple{K1}(vals))
 Extent(vals::NamedTuple{K,V}) where {K,V} = Extent{K,V}(vals)
+
+_promote(b::Tuple) = promote(b...)
+_promote(b::AbstractBounds) = b
 
 bounds(ext::Extent) = getfield(ext, :bounds)
 
@@ -292,7 +333,7 @@ $DE_9IM_DOC
 contains(a::Extent, b::Extent; strict=false) = _do_bounds(all, _contain, a, b, strict)
 
 # Must contain interior points, not just boundary
-_contain(a::Tuple, b::Tuple) = _cover(a, b) && _hasinterior(b)
+_contain(a, b) = _cover(a, b) && _hasinterior(b)
 
 """
     within(a, b; strict=false)
@@ -334,8 +375,9 @@ $DE_9IM_DOC
 """
 intersects(a::Extent, b::Extent; strict=false) = _do_bounds(all, _intersect, a, b, strict)
 
-_intersect((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = 
+_intersect((min_a, max_a), (min_b, max_b)) = 
     (min_a <= min_b && max_a >= min_b) || (min_b <= min_a && max_b >= min_a)
+
 
 """
     disjoint(a, b; strict=false)
@@ -382,8 +424,17 @@ function touches(a::Extent, b::Extent; strict=false)
     end
 end
 
-_touch((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a == max_b || max_a == min_b)
-
+_touch((min_a, max_a)::T,  (min_b, max_b)::T ) where T = (min_a == max_b || max_a == min_b)
+_touch((min_a, max_a)::CC, (min_b, max_b)::CO) = max_a == min_b 
+_touch((min_a, max_a)::OO, (min_b, max_b)::OC) = min_a == max_b
+_touch((min_a, max_a)::CC, (min_b, max_b)::OC) = min_a == max_b
+_touch((min_a, max_a)::OO, (min_b, max_b)::CO) = max_a == min_b
+_touch((min_a, max_a)::CO, (min_b, max_b)::CC) = min_a == max_b
+_touch((min_a, max_a)::OC, (min_b, max_b)::OO) = min_a == max_b
+_touch((min_a, max_a)::OC, (min_b, max_b)::CC) = max_a == min_b
+_touch((min_a, max_a)::CO, (min_b, max_b)::OO) = max_a == min_b
+_touch((min_a, max_a)::CO, (min_b, max_b)::OC) = false
+_touch((min_a, max_a)::OC, (min_b, max_b)::CO) = false
 
 """
     covers(a, b; strict=false)
@@ -406,7 +457,9 @@ $DE_9IM_DOC
 """
 covers(a::Extent, b::Extent; strict=false) = _do_bounds(all, _cover, a, b, strict)
 
-_cover((min_a, max_a)::Tuple, (min_b, max_b)::Tuple) = (min_a <= min_b && max_a >= max_b)
+_cover((min_a, max_a)::AbstractBounds{T,T}, (min_b, max_b)::AbstractBounds{T,T}) where {T} =
+    (min_a <= min_b && max_a >= max_b)
+_cover((min_a, max_a)::CO, (min_b, max_b)) = (min_a <= min_b && max_a >= max_b)
 
 """
     coveredby(a, b; strict=false)
@@ -473,14 +526,16 @@ $ORDER_DOC
 $DE_9IM_DOC 
 """
 equals(a::Extent, b::Extent; strict=false) = _do_bounds(all, _equal, a, b, strict)
+equals(a::Extent{L,U}, b::Extent{L,U}; strict=false) where {L,U} = _do_bounds(all, _equal, a, b, strict)
 
-_equal(a::Tuple, b::Tuple) = a == b
+_equal(a::AbstractBounds{L,U}, b::AbstractBounds{L,U}) where {L,U} = a == b
+_equal(a, b) = false
 
 # Handle `nothing` bounds for all methods
 for f in (:_intersect, :_cover, :_contain, :_touch, :_equal)
     @eval begin
-        $f(::Nothing, ::Tuple) = nothing 
-        $f(::Tuple, ::Nothing) = nothing 
+        $f(::Nothing, ::Union{Tuple,AbstractBounds}) = nothing 
+        $f(::Union{Tuple,AbstractBounds}, ::Nothing) = nothing 
         $f(::Nothing, ::Nothing) = nothing 
     end
 end
@@ -563,6 +618,6 @@ _skipnothing(::Nothing, vals...) = _skipnothing(vals...)
 _skipnothing() = ()
 
 _hasinterior(ex::Extent) = all(map(_hasinterior, bounds(ex)))
-_hasinterior((min, max)::Tuple) = min != max
+_hasinterior((min, max)) = min != max
 
 end
