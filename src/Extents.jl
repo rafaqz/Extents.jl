@@ -140,9 +140,9 @@ function union(ext1::Extent, ext2::Extent; strict=false)
     else
         values = map(keys) do k
             k = _unwrap(k)
-            k_exts = (ext1[k], ext2[k])
-            a = min(map(first, k_exts)...)
-            b = max(map(last, k_exts)...)
+            b1, b2 = ext1[k], ext2[k]
+            a = _nanfree(min, b1[1], b2[1])
+            b = _nanfree(max, b1[2], b2[2])
             (a, b)
         end
         return Extent{map(_unwrap, keys)}(values)
@@ -153,6 +153,13 @@ union(::Nothing, b::Extent; strict=false) = strict ? nothing : b
 union(::Nothing, ::Nothing; kw...) = nothing
 union(a, b; kw...) = union(extent(a), extent(b))
 union(a, b, c, args...; kw...) = union(union(a, b), c, args...)
+
+_nanfree(f, a, b) = f(a, b)
+function _nanfree(f, a::F, b::F) where F<:AbstractFloat
+    isnan(a) && return b 
+    isnan(b) && return a 
+    f(a, b)
+end
 
 """
     intersection(ext1::Extent, ext2::Extent; strict=false)
@@ -172,9 +179,9 @@ function intersection(a::Extent, b::Extent; strict=false)
         # Get a symbol from `Val{:k}`
         k = _unwrap(k)
         # Acces the k symbol of `a` and `b`
-        k_exts = (a[k], b[k])
-        maxs = max(map(first, k_exts)...)
-        mins = min(map(last, k_exts)...)
+        ba, bb = a[k], b[k]
+        maxs = _nanfree(max, ba[1], bb[1])
+        mins = _nanfree(min, ba[2], bb[2]) 
         (maxs, mins)
     end
     return Extent{map(_unwrap, keys)}(values)
