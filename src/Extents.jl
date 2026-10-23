@@ -143,9 +143,9 @@ union(a, b; kw...) = union(extent(a), extent(b))
 union(a, b, c, args...; kw...) = union(union(a, b), c, args...)
 
 _nanfree(f, a, b) = f(a, b)
-function _nanfree(f, a::F, b::F) where F<:AbstractFloat
-    isnan(a) && return b 
-    isnan(b) && return a 
+function _nanfree(f, a::AbstractFloat, b::AbstractFloat)
+    isnan(a) && return b
+    isnan(b) && return a
     f(a, b)
 end
 
@@ -168,8 +168,8 @@ function intersection(a::Extent, b::Extent; strict=false)
         k = _unwrap(k)
         # Acces the k symbol of `a` and `b`
         ba, bb = a[k], b[k]
-        maxs = _nanfree(max, ba[1], bb[1])
-        mins = _nanfree(min, ba[2], bb[2]) 
+        maxs = max(ba[1], bb[1])
+        mins = min(ba[2], bb[2])
         (maxs, mins)
     end
     return Extent{map(_unwrap, keys)}(values)

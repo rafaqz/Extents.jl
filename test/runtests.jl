@@ -62,6 +62,11 @@ end
     @test Extents.union(a, b; strict=true) === nothing
     @test Extents.union(a, c) === nothing
     @test Extents.union(a, n) === E(X=(0.1, 0.9), Y=(1.0, 2.0))
+    # A NaN extent, e.g. of an empty point, does not spread through a union
+    nans = E(X=(NaN, NaN), Y=(NaN, NaN))
+    @test Extents.union(a, nans) === Extents.union(nans, a) === a
+    @test reduce(Extents.union, [a, nans, b]) == Extents.union(a, b)
+    @test Extents.union(E(X=(NaN32, NaN32)), E(X=(0.0, 1.0))) === E(X=(0.0, 1.0))
 
     # If either argument is nothing, return the other
     @test Extents.union(a, nothing) === a
