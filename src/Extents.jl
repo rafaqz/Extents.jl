@@ -167,9 +167,9 @@ function intersection(a::Extent, b::Extent; strict=false)
         # Get a symbol from `Val{:k}`
         k = _unwrap(k)
         # Acces the k symbol of `a` and `b`
-        k_exts = (a[k], b[k])
-        maxs = max(map(first, k_exts)...)
-        mins = min(map(last, k_exts)...)
+        ba, bb = a[k], b[k]
+        maxs = max(ba[1], bb[1])
+        mins = min(ba[2], bb[2])
         (maxs, mins)
     end
     return Extent{map(_unwrap, keys)}(values)
